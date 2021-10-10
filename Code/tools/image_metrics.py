@@ -2,12 +2,17 @@ import keras.backend as K
 import tensorflow as tf
 from icecream import ic
 import numpy as np
+ic.enable()
 def metrics_get(inputs, y_true, y_pred):
     cloud_mean_absolute_error = np_cloud_mean_absolute_error(y_true, y_pred)
     cloud_mean_squared_error = np_cloud_mean_squared_error(y_true, y_pred)
     cloud_psnr = np_cloud_psnr(y_true, y_pred)
 
     ic(cloud_mean_absolute_error,
+        cloud_mean_squared_error,
+        cloud_psnr)
+
+    print(cloud_mean_absolute_error,
         cloud_mean_squared_error,
         cloud_psnr)
 

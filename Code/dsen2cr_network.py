@@ -59,7 +59,7 @@ def DSen2CR_model(input_shape,
 
         def concatenate_array(x):
             global shape_n
-            batch_per_gpu = 8
+            batch_per_gpu = 1
             zeros = K.zeros(shape=(batch_per_gpu, 1, shape_n[2], shape_n[3]))
             ic(K.int_shape(x), K.int_shape(zeros))
 

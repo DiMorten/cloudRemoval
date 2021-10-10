@@ -9,7 +9,8 @@ from keras.utils import plot_model
 from tools.myCallbacks import CSV_NBatchLogger, NBatchLogger, TensorBoardWrapper
 import numpy as np
 from tools.image_metrics import metrics_get
-ic.disable()
+import matplotlib.pyplot as plt
+#ic.disable()
 def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
                   shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
                   use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder, input_shape,
@@ -121,16 +122,48 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
         print("Will resume from the weights in file {}".format(resume_file))
         model.load_model(resume_file)
 
-    model.fit_generator(generator=training_generator,
+    history = model.fit_generator(generator=training_generator,
                         validation_data=validation_generator,
                         epochs=epochs_nr,
                         verbose=1,
                         callbacks=callbacks_list,
                         shuffle=False,
-                        initial_epoch=initial_epoch)
+                        initial_epoch=initial_epoch,
+                        use_multiprocessing=use_multi_processing,
+                        max_queue_size=max_queue_size,
+                        workers=workers)
 
+    pdb.set_trace()
+    # list all data in history
+#    print(history.history.keys())
 
+    # summarize history for loss
+    
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.savefig('loss_history.png')
+    
+    plt.figure()
+    plt.plot(history.history['cloud_mean_absolute_error'])
+    plt.plot(history.history['val_cloud_mean_absolute_error'])
+    plt.title('model MAE')
+    plt.ylabel('MAE')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.savefig('cloud_mean_absolute_error_history.png')
 
+    plt.figure()
+    plt.plot(history.history['cloud_psnr'])
+    plt.plot(history.history['val_cloud_psnr'])
+    plt.title('model psnr')
+    plt.ylabel('psnr')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.savefig('cloud_psnr_history.png')
 
 
 def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_folder, predict_filelist, batch_size,
@@ -188,7 +221,7 @@ def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_f
 
     print("Prediction finished with success!")
 
-'''
+
 def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_folder, predict_filelist, batch_size,
                     clip_min, clip_max, crop_size, input_shape, use_cloud_mask, cloud_threshold, max_val_sar,
                     scale):
@@ -251,5 +284,5 @@ def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_f
         #eval_writer.writerow(eval_results)
 
     print("Prediction finished with success!")
-'''
+
 

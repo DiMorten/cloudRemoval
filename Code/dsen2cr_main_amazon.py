@@ -219,5 +219,9 @@ if __name__ == '__main__':
     parser.add_argument('--resume', action='store', dest='resume_file', help='Resume training from model checkpoint.')
     args = parser.parse_args()
 
-    run_dsen2cr(args.predict_file, args.resume_file)
+    #run_dsen2cr(args.predict_file, args.resume_file)
+
+    #imReconstruction = ImageReconstruction()
+    imLoading = ImageLoading()
+    
 

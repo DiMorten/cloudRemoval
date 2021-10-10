@@ -14,7 +14,7 @@ from icecream import ic
 import pdb
 
 ic.configureOutput(includeContext=True)
-ic.disable()
+#ic.disable()
 def make_dir(dir_path):
     if os.path.isdir(dir_path):
         print("WARNING: Folder {} exists and content may be overwritten!")
