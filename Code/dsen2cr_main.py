@@ -19,7 +19,7 @@ K.set_image_data_format('channels_first')
 import pickle
 
 ic.configureOutput(includeContext=True)
-
+ic.disable()
 def run_dsen2cr(predict_file=None, resume_file=None):
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SETUP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -54,7 +54,10 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 
     random_crop = True  # crop out a part of the input image randomly
 ##    crop_size = 128  # crop size for training images
-    crop_size = 256  # crop size for training images
+    if predict_file !=None:
+        crop_size = 256
+    else:
+        crop_size = 128  # crop size for training images
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Setup training %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -66,7 +69,10 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     # training parameters
     initial_epoch = 0  # start at epoch number
     epochs_nr = 8  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
-    batch_size = 1  # training batch size to distribute over GPUs
+    if predict_file !=None:    
+        batch_size = 1  # training batch size to distribute over GPUs
+    else:
+        batch_size = 8
 
     # define metric to be optimized
     loss = img_met.carl_error
@@ -85,17 +91,19 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     optimizer = Nadam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-8, schedule_decay=0.004)
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Other setup parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    predict_data_type = 'val'  # possible options: 'val' or 'test'
+    if predict_file != None:
+        predict_data_type = 'test'  # possible options: 'val' or 'test'
+    else:
+        predict_data_type = 'val'  # possible options: 'val' or 'test'
 
     log_step_freq = 1  # frequency of logging
 
     n_gpus = 1  # set number of GPUs
     # multiprocessing optimization setup
-    use_multi_processing = True
+    use_multi_processing = False
     max_queue_size = 2 * n_gpus
     workers = 4 * n_gpus
-
+    workers = 1
     batch_per_gpu = int(batch_size / n_gpus)
 
     input_shape = ((13, crop_size, crop_size), (2, crop_size, crop_size))
@@ -154,22 +162,26 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     with open("full_list.txt", "rb") as fp:   # Unpickling
         entire_filelist = pickle.load(fp)
 
-    mode = 'test' # 'train'
-    if mode == 'test':
+    if predict_file != None:
+
         test_filelist = entire_filelist.copy()
         train_filelist = test_filelist[:20]
         val_filelist = test_filelist[20:40]
+        ic(test_filelist)
         
         
     else:
-        
-        ic(len(entire_filelist), int(len(entire_filelist)*0.1))
+#        train_filelist = entire_filelist.copy()
+#        train_filelist = train_filelist[:20]
+#        val_filelist = train_filelist[20:40]
+#        ic(train_filelist)
+
+#        ic(len(entire_filelist), int(len(entire_filelist)*0.1))
         train_filelist = entire_filelist[:-int(len(entire_filelist)*0.1)] # 2769
         val_filelist = entire_filelist[-int(len(entire_filelist)*0.1):]
         test_filelist = val_filelist.copy()
 
 
-    ic(test_filelist)
 
     print("Number of train files found: ", len(train_filelist))
     print("Number of validation files found: ", len(val_filelist))
@@ -184,7 +196,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         else:
             raise ValueError('Prediction data type not recognized.')
         ic(predict_filelist)
-        pdb.set_trace()
+
         predict_dsen2cr(predict_file, model, predict_data_type, base_out_path, input_data_folder, predict_filelist,
                         batch_size, clip_min, clip_max, crop_size, input_shape, use_cloud_mask, cloud_threshold,
                         max_val_sar, scale)

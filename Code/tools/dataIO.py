@@ -14,7 +14,7 @@ from icecream import ic
 import pdb
 
 ic.configureOutput(includeContext=True)
-
+ic.disable()
 def make_dir(dir_path):
     if os.path.isdir(dir_path):
         print("WARNING: Folder {} exists and content may be overwritten!")
@@ -286,6 +286,9 @@ class DataGenerator(keras.utils.Sequence):
         self.random_crop_paramx = np.repeat(0, self.nr_images)
         self.random_crop_paramy = np.repeat(0, self.nr_images)
 
+        
+#        ic(self.random_crop_paramx)
+#        pdb.set_trace()
         self.on_epoch_end()
 
         print("Generator initialized")
@@ -305,7 +308,7 @@ class DataGenerator(keras.utils.Sequence):
         ##ic(len(self.list_IDs), self.list_IDs[0])
         # Find list of IDs
         list_IDs_temp = [self.list_IDs[k] for k in indexes]
-        ic(self.list_IDs)
+
         if self.include_target:
             # Generate data
             X, y = self.__data_generation(list_IDs_temp, self.augment_rotation_param[indexes],
@@ -351,7 +354,7 @@ class DataGenerator(keras.utils.Sequence):
                 output_opt_cloud_batch = [np.append(output_opt_batch[sample], cloud_mask_batch[sample], axis=0) for
                                           sample in range(len(output_opt_batch))]
                 output_opt_cloud_batch = np.asarray(output_opt_cloud_batch)
-                print("HEre!!")
+                #print("HEre!!")
                 ##ic(input_opt_batch.shape, input_sar_batch.shape, output_opt_cloud_batch.shape)
                 ##ic(output_opt_batch.shape)
                 #pdb.set_trace()
@@ -367,10 +370,18 @@ class DataGenerator(keras.utils.Sequence):
         # with block not working with window kw
         src = rasterio.open(path, 'r', driver='GTiff')
         ##ic(paramx, paramy, self.crop_size)
+        #paramx = 0
+        #paramy = 0
+        #paramx = self.random_crop_paramx_
+        #paramy = self.random_crop_paramx_
 
         image = src.read(window=((paramx, paramx + self.crop_size), (paramy, paramy + self.crop_size)))
         src.close()
         image[np.isnan(image)] = np.nanmean(image)  # fill holes and artifacts
+#        if image.shape[1] == 41 or image.shape[1] == 95:
+#            ic(path, image.shape)
+#            pdb.set_trace()
+
         return image
 
     def get_opt_image(self, path, paramx, paramy):

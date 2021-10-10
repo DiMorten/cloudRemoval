@@ -9,7 +9,7 @@ from keras.utils import plot_model
 from tools.myCallbacks import CSV_NBatchLogger, NBatchLogger, TensorBoardWrapper
 import numpy as np
 from tools.image_metrics import metrics_get
-
+ic.disable()
 def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
                   shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
                   use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder, input_shape,
@@ -76,6 +76,7 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
 
     # define callbacks list
     callbacks_list = [checkpoint, csv_logger, batch_logger, csv_batch_logger, tensorboard]
+    callbacks_list = [checkpoint]
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initialize training %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     params = {'input_dim': input_shape,
@@ -126,10 +127,7 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
                         verbose=1,
                         callbacks=callbacks_list,
                         shuffle=False,
-                        initial_epoch=initial_epoch,
-                        use_multiprocessing=use_multi_processing,
-                        max_queue_size=max_queue_size,
-                        workers=workers)
+                        initial_epoch=initial_epoch)
 
 
 
