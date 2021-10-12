@@ -3,7 +3,8 @@ import tensorflow as tf
 from icecream import ic
 import numpy as np
 ic.enable()
-def metrics_get(inputs, y_true, y_pred):
+# def metrics_get(inputs, y_true, y_pred): 
+def metrics_get(y_true, y_pred):
     cloud_mean_absolute_error = np_cloud_mean_absolute_error(y_true, y_pred)
     cloud_mean_squared_error = np_cloud_mean_squared_error(y_true, y_pred)
     cloud_psnr = np_cloud_psnr(y_true, y_pred)
@@ -18,17 +19,17 @@ def metrics_get(inputs, y_true, y_pred):
 
 def np_cloud_mean_absolute_error(y_true, y_pred):
     """Computes the MAE over the full image."""
-    return np.mean(np.abs(y_pred[:, 0:13, :, :] - y_true[:, 0:13, :, :]))
+    return np.mean(np.abs(y_pred[..., 0:13, :, :] - y_true[..., 0:13, :, :]))
 
 def np_cloud_mean_squared_error(y_true, y_pred):
     """Computes the MSE over the full image."""
-    return np.mean(np.square(y_pred[:, 0:13, :, :] - y_true[:, 0:13, :, :]))
+    return np.mean(np.square(y_pred[..., 0:13, :, :] - y_true[..., 0:13, :, :]))
 
 def np_cloud_psnr(y_true, y_predict):
     """Computes the PSNR over the full image."""
     y_true *= 2000
     y_predict *= 2000
-    rmse = np.sqrt(np.mean(np.square(y_predict[:, 0:13, :, :] - y_true[:, 0:13, :, :])))
+    rmse = np.sqrt(np.mean(np.square(y_predict[..., 0:13, :, :] - y_true[..., 0:13, :, :])))
 
     return 20.0 * (np.log(10000.0 / rmse) / np.log(10.0))
 

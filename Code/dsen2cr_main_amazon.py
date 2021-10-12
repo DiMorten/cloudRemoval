@@ -17,9 +17,10 @@ import pdb
 K.set_image_data_format('channels_first')
 
 import pickle
-from predictAmazon import ImageReconstruction, ImageLoading
+from predictAmazon import Image, ImageReconstruction
 ic.configureOutput(includeContext=True)
-#ic.disable()
+from tools.image_metrics import metrics_get
+
 def run_dsen2cr(predict_file=None, resume_file=None):
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SETUP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -197,9 +198,35 @@ def run_dsen2cr(predict_file=None, resume_file=None):
             raise ValueError('Prediction data type not recognized.')
         ic(predict_filelist)
 
-        predict_dsen2cr(predict_file, model, predict_data_type, base_out_path, input_data_folder, predict_filelist,
-                        batch_size, clip_min, clip_max, crop_size, input_shape, use_cloud_mask, cloud_threshold,
-                        max_val_sar, scale)
+        print("Predicting using file: {}".format(predict_file))
+        
+        # load the model weights at checkpoint
+        model.load_weights(predict_file)
+        
+        im = Image()
+        imReconstruction = ImageReconstruction(model, output_c_dim = 13, patch_size=256)
+        predictionLoad = True
+        if predictionLoad == False:
+            predictions = imReconstruction.infer(im.s2_cloudy, im.s1).astype(np.float32)
+        else:
+            predictions = np.load('probs.npy') # .astype(np.float32)
+
+        ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy))
+        ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
+        ic(im.s1.shape, im.s2.shape, im.s2_cloudy.shape)
+        ic(predictions.dtype, predictions.shape)
+        # pdb.set_trace()
+        del im.s2_cloudy, im.s1
+        pdb.set_trace()
+        
+        #metrics_get(im.s2, predictions)
+
+        #ic(np.average(im.s2))
+        #pdb.set_trace()
+            
+        #predict_dsen2cr(predict_file, model, predict_data_type, base_out_path, input_data_folder, predict_filelist,
+        #                batch_size, clip_min, clip_max, crop_size, input_shape, use_cloud_mask, cloud_threshold,
+        #                max_val_sar, scale)
 
 
     else:
@@ -219,9 +246,8 @@ if __name__ == '__main__':
     parser.add_argument('--resume', action='store', dest='resume_file', help='Resume training from model checkpoint.')
     args = parser.parse_args()
 
-    #run_dsen2cr(args.predict_file, args.resume_file)
+    run_dsen2cr(args.predict_file, args.resume_file)
 
-    #imReconstruction = ImageReconstruction()
-    imLoading = ImageLoading()
+    
     
 

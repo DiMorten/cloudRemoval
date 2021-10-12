@@ -10,7 +10,7 @@ from tools.myCallbacks import CSV_NBatchLogger, NBatchLogger, TensorBoardWrapper
 import numpy as np
 from tools.image_metrics import metrics_get
 import matplotlib.pyplot as plt
-#ic.disable()
+
 def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
                   shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
                   use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder, input_shape,
