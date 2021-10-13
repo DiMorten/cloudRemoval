@@ -221,7 +221,7 @@ def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_f
 
     print("Prediction finished with success!")
 
-
+'''
 def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_folder, predict_filelist, batch_size,
                     clip_min, clip_max, crop_size, input_shape, use_cloud_mask, cloud_threshold, max_val_sar,
                     scale):
@@ -275,7 +275,7 @@ def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_f
         targets = np.squeeze(np.stack(targets, axis = 0))
         predictions = np.squeeze(np.stack(predictions, axis = 0))
         
-        metrics_get(inputs, targets, predictions)
+        metrics_get(targets, predictions)
 #        pdb.set_trace()
         ic(inputs.shape, targets.shape, predictions.shape)
         # get evaluation metrics
@@ -285,4 +285,5 @@ def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_f
 
     print("Prediction finished with success!")
 
+'''
 

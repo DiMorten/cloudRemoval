@@ -17,7 +17,6 @@ import pdb
 K.set_image_data_format('channels_first')
 
 import pickle
-from predictAmazon import ImageReconstruction, ImageLoading
 ic.configureOutput(includeContext=True)
 
 def run_dsen2cr(predict_file=None, resume_file=None):
@@ -182,7 +181,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 #        val_filelist = train_filelist[32:64]
 #        ic(train_filelist)
 
-
+    test_filelist = test_filelist[0:2]
     print("Number of train files found: ", len(train_filelist))
     print("Number of validation files found: ", len(val_filelist))
     print("Number of test files found: ", len(test_filelist))

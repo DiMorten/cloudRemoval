@@ -462,11 +462,11 @@ class DataGenerator(keras.utils.Sequence):
         batch = np.empty((self.batch_size, *dim)).astype('float32')
         ##ic(batch.shape)
         cloud_mask_batch = np.empty((self.batch_size, self.input_dim[0][1], self.input_dim[0][2])).astype('float32')
-        ic(list_IDs_temp)
+        #ic(list_IDs_temp)
         for i, ID in enumerate(list_IDs_temp):
-            ic(ID)
+            #ic(ID)
             data_image = self.get_data_image(ID, data_type, random_crop_paramx_temp[i], random_crop_paramy_temp[i])
-            ic(data_image.shape)
+            #ic(data_image.shape)
             # pdb.set_trace()
 
             if self.data_augmentation:

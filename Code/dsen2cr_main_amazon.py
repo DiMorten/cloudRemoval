@@ -20,7 +20,9 @@ import pickle
 from predictAmazon import Image, ImageReconstruction
 ic.configureOutput(includeContext=True)
 from tools.image_metrics import metrics_get
-
+import cv2
+import matplotlib.pyplot as plt 
+import tifffile as tiff
 def run_dsen2cr(predict_file=None, resume_file=None):
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SETUP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -204,12 +206,16 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         model.load_weights(predict_file)
         
         im = Image()
+        ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy))
+        ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
         imReconstruction = ImageReconstruction(model, output_c_dim = 13, patch_size=256)
-        predictionLoad = True
+        predictionLoad = False
+        #pdb.set_trace()
         if predictionLoad == False:
             predictions = imReconstruction.infer(im.s2_cloudy, im.s1).astype(np.float32)
+            #np.save('predictions.npy', predictions)
         else:
-            predictions = np.load('probs.npy') # .astype(np.float32)
+            predictions = np.load('predictions.npy') # .astype(np.float32)
 
         ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy))
         ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
@@ -217,8 +223,41 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(predictions.dtype, predictions.shape)
         # pdb.set_trace()
         del im.s2_cloudy, im.s1
+        #pdb.set_trace()
+
+        im.saveSampleIms(predictions)
+
         pdb.set_trace()
+
+        #metrics_get(im.s2, predictions)
+        im.s2 = im.s2*scale
+        predictions = predictions*scale
+
+        #s2_rgb = im.s2[1:4].astype(np.int)
+        ic(im.s2.shape)
+        #pdb.set_trace()
+        im.s2 = np.transpose(im.s2, (1, 2, 0))
+        ic(im.s2[:,:,1:4].astype(np.int16).shape)
+        tiff.imsave('s2_saved_after.tif', im.s2[:,:,1:4].astype(np.int16), photometric='rgb')
         
+        plt.figure(figsize=(5,10))
+        plt.imshow(im.s2[:,:,1:4].astype(np.int16))
+        plt.axis('off')
+        plt.savefig('s2_rgb.png')
+        #plt.show()
+        #pdb.set_trace()        
+        #predictions_rgb = predictions[1:4].astype(np.int)
+        predictions = np.transpose(predictions, (1, 2, 0))
+        ic(predictions[:,:,1:4].astype(np.int16).shape)
+
+        tiff.imsave('predictions_saved.tif', predictions[:,:,1:4].astype(np.int16), photometric='rgb')
+        
+        plt.figure(figsize=(5,10))
+        plt.imshow(predictions[:,:,1:4].astype(np.int16))
+        plt.axis('off')
+        plt.savefig('predictions_rgb.png')
+        #plt.show()
+        pdb.set_trace()  
         #metrics_get(im.s2, predictions)
 
         #ic(np.average(im.s2))

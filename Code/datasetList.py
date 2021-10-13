@@ -328,8 +328,12 @@ if __name__ == "__main__":
                                         s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
     '''
 
-    scene = 86
-    s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SUMMER, scene, s1_bands=S1Bands.ALL, 
+    #scene = 86
+    #s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SUMMER, scene, s1_bands=S1Bands.ALL, 
+    #                                    s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
+
+    scene = 40
+    s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SPRING, scene, s1_bands=S1Bands.ALL, 
                                         s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
     '''
 

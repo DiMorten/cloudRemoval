@@ -16,6 +16,20 @@ import rasterio
 import cv2
 from skimage.transform import resize
 from tools.image_metrics import metrics_get
+import matplotlib.pyplot as plt 
+import tifffile as tiff
+import pathlib
+
+
+def make_dir(dir_path):
+    if os.path.isdir(dir_path):
+        print("WARNING: Folder {} exists and content may be overwritten!")
+    else:
+        os.makedirs(dir_path)
+
+    return dir_path
+
+
 class ImageReconstruction(object):
 
     def __init__ (self, model, output_c_dim, patch_size=256, overlap_percent=0):
@@ -78,7 +92,7 @@ class ImageReconstruction(object):
         # Taken off the padding
         probs = probs[..., :k1*stride-step_row, :k2*stride-step_col]
         # probs = probs.astype(np.float32)
-        np.save('probs.npy', probs)
+        #np.save('probs.npy', probs)
 
         #pdb.set_trace()
         return probs
@@ -86,28 +100,71 @@ class ImageReconstruction(object):
 class Image():
     def __init__(self, root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/"):
         print("creating ImageLoading object...")
+
         self.root_path = root_path
+
+        scale = 2000
+        max_val_sar = 2
+        clip_min = [[-25.0, -32.5], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+        clip_max = [[0, 0], [10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000],
+                    [10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000]]
+
+        self.max_val = max_val_sar
+        self.clip_max = clip_max
+        self.clip_min = clip_min
+        self.scale = scale
+
         #imOptical = self.loadImage(root_path + "")
-        print("Loading sar..")
-        self.s1 = self.loadSar()
-        print("Loading optical..")
+        loadIms=True
+        if loadIms == False:
+            print("Loading sar..")
+            self.s1 = self.loadSar()
+            print("Loading optical..")
+            np.save('s1.npy', self.s1)
 
-        path_list_s2 = ['Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif',
-            'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B4_B5_B6.tif',
-            'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B7_B8_B8A.tif',
-            'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B9_B10_B11.tif',
-            'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B12.tif']
-        print("Loading sentinel-2...")
-        self.s2 = self.loadOptical(path_list_s2)
+            path_list_s2 = ['Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif',
+                'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B4_B5_B6.tif',
+                'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B7_B8_B8A.tif',
+                'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B9_B10_B11.tif',
+                'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B12.tif']
+            print("Loading sentinel-2...")
+            self.s2 = self.loadOptical(path_list_s2)
+            np.save('s2.npy', self.s2)
 
-        path_list_s2_cloudy = ['Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B1_B2_B3.tif',
-            'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B4_B5_B6.tif',
-            'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B7_B8_B8A.tif',
-            'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B9_B10_B11.tif',
-            'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B12.tif']
-        print("Loading sentinel-2 cloudy...")
-        self.s2_cloudy = self.loadOptical(path_list_s2_cloudy)
+            path_list_s2_cloudy = ['Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B1_B2_B3.tif',
+                'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B4_B5_B6.tif',
+                'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B7_B8_B8A.tif',
+                'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B9_B10_B11.tif',
+                'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B12.tif']
+            print("Loading sentinel-2 cloudy...")
+            self.s2_cloudy = self.loadOptical(path_list_s2_cloudy)
+            np.save('s2_cloudy.npy', self.s2_cloudy)
+        else:
+            self.s1 = np.load('s1.npy')
+            self.s2 = np.load('s2.npy')
+            self.s2_cloudy = np.load('s2_cloudy.npy')
+            
+        self.s1 = self.s1[:,1000:1000+512, 1000:1000+512]
+        self.s2 = self.s2[:,1000:1000+512, 1000:1000+512]
+        self.s2_cloudy = self.s2_cloudy[:,1000:1000+512, 1000:1000+512]
 
+
+        
+        s2_copy = np.transpose(self.s2, (1, 2, 0))
+        ic(s2_copy[:,:,1:4].shape)
+        tiff.imsave('s2_saved_first.tif', s2_copy[:,:,1:4].astype(np.int16), photometric='rgb')
+        
+        s2_cloudy_copy = np.transpose(self.s2_cloudy, (1, 2, 0))
+        ic(s2_cloudy_copy[:,:,1:4].shape)
+        tiff.imsave('s2_cloudy_saved_first.tif', s2_cloudy_copy[:,:,1:4].astype(np.int16), photometric='rgb')
+        
+        plt.figure(figsize=(5,10))
+        plt.imshow(s2_copy[:,:,1:4].astype(np.int16))
+        plt.axis('off')
+        plt.savefig('s2_rgb.png')
+        #plt.show()
+        #pdb.set_trace()     
+        
         ic(np.min(self.s2[1]), np.average(self.s2[1]), np.max(self.s2[1]))
         ic(np.min(self.s2[2]), np.average(self.s2[2]), np.max(self.s2[2]))
         ic(np.min(self.s2[3]), np.average(self.s2[3]), np.max(self.s2[3]))
@@ -116,6 +173,11 @@ class Image():
         ic(np.min(self.s2_cloudy[2]), np.average(self.s2_cloudy[2]), np.max(self.s2_cloudy[2]))
         ic(np.min(self.s2_cloudy[3]), np.average(self.s2_cloudy[3]), np.max(self.s2_cloudy[3]))
         
+
+        self.s2 = self.get_normalized_data(self.s2, data_type = 2)
+        self.s2_cloudy = self.get_normalized_data(self.s2_cloudy, data_type = 2)
+        self.s1 = self.get_normalized_data(self.s1, data_type = 2)
+
         #pdb.set_trace()
 
     def loadImage(self, path):
@@ -151,6 +213,7 @@ class Image():
         #pdb.set_trace()
         return s2
 
+#        def loadOptical()
     def db2intensities(self, img):
         img = 10**(img/10.0)
         return img
@@ -180,3 +243,129 @@ class Image():
 
         return s1
         
+    def get_normalized_data(self, data_image, data_type):
+
+        # SAR
+        if data_type == 1:
+            for channel in range(len(data_image)):
+                data_image[channel] = np.clip(data_image[channel], self.clip_min[data_type - 1][channel],
+                                              self.clip_max[data_type - 1][channel])
+                data_image[channel] -= self.clip_min[data_type - 1][channel]
+                data_image[channel] = self.max_val * (data_image[channel] / (
+                        self.clip_max[data_type - 1][channel] - self.clip_min[data_type - 1][channel]))
+
+        # OPT
+        elif data_type == 2 or data_type == 3:
+            for channel in range(len(data_image)):
+                data_image[channel] = np.clip(data_image[channel], self.clip_min[data_type - 1][channel],
+                                              self.clip_max[data_type - 1][channel])
+
+            data_image /= self.scale
+
+        return data_image
+    
+
+    #generate_output_images(data_image, ID[i], predicted_images_path, input_data_folder, cloud_threshold)
+    def saveSampleIms(self, predicted):
+        predicted *= self.scale
+
+        self.generate_output_images(predicted)
+
+
+
+    def generate_output_images(self, predicted):
+
+        ##sar_preview = get_preview(filepath_sar, False, [1, 2, 2], sar_composite=True)
+
+        opt_bands = [4, 3, 2]  # R, G, B bands (S2 channel numbers)
+        ##cloudFree_preview = get_preview(filepath_cloudFree, False, opt_bands, brighten_limit=2000)
+        ##cloudy_preview = get_preview(filepath_cloudy, False, opt_bands)
+
+        predicted_preview = self.get_preview(predicted, True, opt_bands, 2000)
+
+        ##ic(predicted.shape, filepath_cloudFree)
+        ic(np.min(predicted_preview), np.average(predicted_preview), np.max(predicted_preview))
+        ##ic(np.min(cloudFree_preview), np.average(cloudFree_preview), np.max(cloudFree_preview))
+        predicted_images_path = 'sample_ims'
+        scene_name = '2018'
+        out_path = make_dir(os.path.join(predicted_images_path, scene_name))
+        ##ic(np.average(cloudFree_preview[-30:-1, -30:-1]), 
+        ##    np.average(predicted_preview[-30:-1, -30:-1]),
+        ##    np.average(cloudy_preview[-30:-1, -30:-1]))
+#        cloud_mask = get_cloud_cloudshadow_mask(get_raw_data(filepath_cloudy), cloud_threshold)
+        self.save_single_images(predicted_preview, out_path)
+    ##    pdb.set_trace()
+        return
+
+
+    def get_preview(self, file, predicted_file, bands, brighten_limit=None, sar_composite=False):
+        if not predicted_file:
+            with rasterio.open(file) as src:
+                r, g, b = src.read(bands)
+        else:
+            # file is actually the predicted array
+            r = file[bands[0] - 1]
+            g = file[bands[1] - 1]
+            b = file[bands[2] - 1]
+        # ic(r.shape, g.shape, b.shape)
+        if brighten_limit is None:
+            return self.get_rgb_preview(r, g, b, sar_composite)
+        else:
+            r = np.clip(r, 0, brighten_limit)
+            g = np.clip(g, 0, brighten_limit)
+            b = np.clip(b, 0, brighten_limit)
+            return self.get_rgb_preview(r, g, b, sar_composite)
+
+
+    def save_single_images(self, predicted_preview, out_path):
+
+        pathlib.Path(out_path).mkdir(parents=True, exist_ok=True)
+        ##ic(predicted_preview.shape, cloudFree_preview.shape)
+    #    pdb.set_trace()
+
+        self.save_single_image(predicted_preview, out_path, "inputpred")
+
+        return
+
+    def save_single_image(self, image, out_path, name):
+        plt.figure(frameon=False)
+        plt.imshow(image)
+        plt.gca().get_xaxis().set_visible(False)
+        plt.gca().get_yaxis().set_visible(False)
+        plt.axis('off')
+        plt.savefig(os.path.join(out_path, name + '.png'), dpi=600, bbox_inches='tight', pad_inches=0)
+        plt.close()
+
+        return
+
+    def get_rgb_preview(self, r, g, b, sar_composite=False):
+        if not sar_composite:
+
+            # stack and move to zero
+            rgb = np.dstack((r, g, b))
+            rgb = rgb - np.nanmin(rgb)
+
+            # treat saturated images, scale values
+            if np.nanmax(rgb) == 0:
+                rgb = 255 * np.ones_like(rgb)
+            else:
+                rgb = 255 * (rgb / np.nanmax(rgb))
+
+            # replace nan values before final conversion
+            rgb[np.isnan(rgb)] = np.nanmean(rgb)
+
+            return rgb.astype(np.uint8)
+
+        else:
+            # generate SAR composite
+            HH = r
+            HV = g
+
+            HH = np.clip(HH, -25.0, 0)
+            HH = (HH + 25.1) * 255 / 25.1
+            HV = np.clip(HV, -32.5, 0)
+            HV = (HV + 32.6) * 255 / 32.6
+
+            rgb = np.dstack((np.zeros_like(HH), HH, HV))
+
+            return rgb.astype(np.uint8)
