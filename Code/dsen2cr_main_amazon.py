@@ -217,6 +217,17 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         else:
             predictions = np.load('predictions.npy') # .astype(np.float32)
 
+        ic(np.average(im.s2), np.average(predictions), 
+            np.std(im.s2), np.average(predictions))
+        
+
+        #===================================== Get metrics ======================#
+        ic(np.mean(np.abs(predictions - im.s2)))
+
+        metrics_get(im.s2, predictions)
+
+
+        pdb.set_trace()
         ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy))
         ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
         ic(im.s1.shape, im.s2.shape, im.s2_cloudy.shape)
@@ -228,11 +239,21 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         #pdb.set_trace()
 
 
-        pdb.set_trace()
 
+        #pdb.set_trace()
+        ic(np.average(im.s2), np.average(predictions), 
+            np.std(im.s2), np.std(predictions))
+        
         #metrics_get(im.s2, predictions)
         im.s2 = im.s2*scale
-        predictions = predictions*scale
+        # predictions = predictions*scale
+
+        ic(np.average(im.s2), np.average(predictions), 
+            np.std(im.s2), np.std(predictions))
+        
+
+        #===================================== Save images TIF ======================#
+        
 
         #s2_rgb = im.s2[1:4].astype(np.int)
         ic(im.s2.shape)
@@ -258,16 +279,28 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         plt.axis('off')
         plt.savefig('predictions_rgb.png')
         #plt.show()
-        pdb.set_trace()  
-        #metrics_get(im.s2, predictions)
+        #==================== histogram
+        plt.figure()
+        n, bins, patches = plt.hist(predictions[:,:,1].flatten(), 300, density=True, facecolor='r',
+            histtype = 'step')
+        n, bins, patches = plt.hist(predictions[:,:,2].flatten(), 300, density=True, facecolor='g',
+            histtype = 'step')
+        n, bins, patches = plt.hist(predictions[:,:,3].flatten(), 300, density=True, facecolor='b',
+            histtype = 'step')
 
-        #ic(np.average(im.s2))
-        #pdb.set_trace()
-            
-        #predict_dsen2cr(predict_file, model, predict_data_type, base_out_path, input_data_folder, predict_filelist,
-        #                batch_size, clip_min, clip_max, crop_size, input_shape, use_cloud_mask, cloud_threshold,
-        #                max_val_sar, scale)
+        #plt.show()
+        #plt.figure()
+        n, bins, patches = plt.hist(im.s2[:,:,1].flatten(), 300, density=True, facecolor='r',
+            histtype = 'step')
+        n, bins, patches = plt.hist(im.s2[:,:,2].flatten(), 300, density=True, facecolor='g',
+            histtype = 'step')
+        n, bins, patches = plt.hist(im.s2[:,:,3].flatten(), 300, density=True, facecolor='b',
+            histtype = 'step')
+        #plt.xlim(500, 1800)
+        plt.legend(['Predictions','Predictions','Predictions', 'Target','Target','Target'])
+        plt.show()
 
+        
 
     else:
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TRAIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

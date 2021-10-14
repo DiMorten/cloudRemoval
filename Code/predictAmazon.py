@@ -144,9 +144,18 @@ class Image():
             self.s2 = np.load('s2.npy')
             self.s2_cloudy = np.load('s2_cloudy.npy')
             
-        self.s1 = self.s1[:,1000:1000+512, 1000:1000+512]
-        self.s2 = self.s2[:,1000:1000+512, 1000:1000+512]
-        self.s2_cloudy = self.s2_cloudy[:,1000:1000+512, 1000:1000+512]
+        #self.s1 = self.s1[:,1000:1000+512, 1000:1000+512]
+        #self.s2 = self.s2[:,1000:1000+512, 1000:1000+512]
+        #self.s2_cloudy = self.s2_cloudy[:,1000:1000+512, 1000:1000+512]
+
+        crop0 = 1000
+        #crop0 = 3000
+        #delta_crop = 1500
+        delta_crop = 1500
+        
+        #self.s1 = self.s1[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
+        #self.s2 = self.s2[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
+        #self.s2_cloudy = self.s2_cloudy[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
 
         ic(np.min(self.s1[1]), np.average(self.s1[1]), np.max(self.s1[1]))
 

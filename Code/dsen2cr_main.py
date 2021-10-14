@@ -17,6 +17,8 @@ import pdb
 K.set_image_data_format('channels_first')
 
 import pickle
+import tifffile as tiff
+import pathlib
 ic.configureOutput(includeContext=True)
 
 def run_dsen2cr(predict_file=None, resume_file=None):

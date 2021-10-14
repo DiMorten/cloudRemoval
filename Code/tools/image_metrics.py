@@ -13,9 +13,6 @@ def metrics_get(y_true, y_pred):
         cloud_mean_squared_error,
         cloud_psnr)
 
-    print(cloud_mean_absolute_error,
-        cloud_mean_squared_error,
-        cloud_psnr)
 
 def np_cloud_mean_absolute_error(y_true, y_pred):
     """Computes the MAE over the full image."""
@@ -32,6 +29,24 @@ def np_cloud_psnr(y_true, y_predict):
     rmse = np.sqrt(np.mean(np.square(y_predict[..., 0:13, :, :] - y_true[..., 0:13, :, :])))
 
     return 20.0 * (np.log(10000.0 / rmse) / np.log(10.0))
+
+
+def np_cloud_mean_absolute_error(y_true, y_pred):
+    """Computes the MAE over the full image."""
+    return np.mean(np.abs(y_pred - y_true))
+
+def np_cloud_mean_squared_error(y_true, y_pred):
+    """Computes the MSE over the full image."""
+    return np.mean(np.square(y_pred - y_true))
+
+def np_cloud_psnr(y_true, y_predict):
+    """Computes the PSNR over the full image."""
+    y_true *= 2000
+    y_predict *= 2000
+    rmse = np.sqrt(np.mean(np.square(y_predict - y_true)))
+
+    return 20.0 * (np.log(10000.0 / rmse) / np.log(10.0))
+
 
 
 def cloud_mean_absolute_error(y_true, y_pred):

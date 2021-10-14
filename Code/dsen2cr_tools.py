@@ -10,7 +10,8 @@ from tools.myCallbacks import CSV_NBatchLogger, NBatchLogger, TensorBoardWrapper
 import numpy as np
 from tools.image_metrics import metrics_get
 import matplotlib.pyplot as plt
-
+import tifffile as tiff
+import pathlib
 def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
                   shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
                   use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder, input_shape,
@@ -221,7 +222,7 @@ def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_f
 
     print("Prediction finished with success!")
 
-'''
+
 def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_folder, predict_filelist, batch_size,
                     clip_min, clip_max, crop_size, input_shape, use_cloud_mask, cloud_threshold, max_val_sar,
                     scale):
@@ -275,6 +276,39 @@ def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_f
         targets = np.squeeze(np.stack(targets, axis = 0))
         predictions = np.squeeze(np.stack(predictions, axis = 0))
         
+
+        ic(targets[0,1:4].astype(np.int16).shape)
+        targets_tif = np.transpose(targets[0,1:4], (1, 2, 0))
+        ic(targets_tif.shape)
+        tiff.imsave('targets_saved.tif', targets_tif.astype(np.int16), photometric='rgb')
+
+        ic(predictions[0,1:4].astype(np.int16).shape)
+        predictions_tif = np.transpose(predictions[0,1:4], (1, 2, 0))
+        ic(predictions_tif.shape)
+        tiff.imsave('predictions_saved.tif', predictions_tif.astype(np.int16), photometric='rgb')
+        
+
+        #==================== histogram
+        plt.figure()
+        n, bins, patches = plt.hist(predictions[0,1,:,:].flatten(), 300, density=True, facecolor='r',
+            histtype = 'step')
+        n, bins, patches = plt.hist(predictions[0,2,:,:].flatten(), 300, density=True, facecolor='g',
+            histtype = 'step')
+        n, bins, patches = plt.hist(predictions[0,3,:,:].flatten(), 300, density=True, facecolor='b',
+            histtype = 'step')
+
+        #plt.show()
+        #plt.figure()
+        n, bins, patches = plt.hist(targets[0,1,:,:].flatten(), 300, density=True, facecolor='r',
+            histtype = 'step')
+        n, bins, patches = plt.hist(targets[0,2,:,:].flatten(), 300, density=True, facecolor='g',
+            histtype = 'step')
+        n, bins, patches = plt.hist(targets[0,3,:,:].flatten(), 300, density=True, facecolor='b',
+            histtype = 'step')
+        #plt.xlim(500, 1800)
+        plt.legend(['Predictions','Predictions','Predictions', 'Target','Target','Target'])
+        plt.show()
+        #===============
         metrics_get(targets, predictions)
 #        pdb.set_trace()
         ic(inputs.shape, targets.shape, predictions.shape)
@@ -285,5 +319,4 @@ def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_f
 
     print("Prediction finished with success!")
 
-'''
 
