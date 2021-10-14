@@ -95,14 +95,16 @@ def get_rgb_preview(r, g, b, sar_composite=False):
         # generate SAR composite
         HH = r
         HV = g
+        ic(np.min(HH), np.average(HH), np.std(HH),np.max(HH))
 
         HH = np.clip(HH, -25.0, 0)
         HH = (HH + 25.1) * 255 / 25.1
         HV = np.clip(HV, -32.5, 0)
         HV = (HV + 32.6) * 255 / 32.6
+        ic(np.min(HH), np.average(HH), np.std(HH),np.max(HH))
 
         rgb = np.dstack((np.zeros_like(HH), HH, HV))
-
+        pdb.set_trace()
         return rgb.astype(np.uint8)
 
 
@@ -431,14 +433,19 @@ class DataGenerator(keras.utils.Sequence):
 
         # SAR
         if data_type == 1:
+            ic(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
             for channel in range(len(data_image)):
                 data_image[channel] = np.clip(data_image[channel], self.clip_min[data_type - 1][channel],
                                               self.clip_max[data_type - 1][channel])
                 data_image[channel] -= self.clip_min[data_type - 1][channel]
                 data_image[channel] = self.max_val * (data_image[channel] / (
                         self.clip_max[data_type - 1][channel] - self.clip_min[data_type - 1][channel]))
+            ic(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
+
             if shift_data:
                 data_image -= self.max_val / 2
+            ic(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
+
         # OPT
         elif data_type == 2 or data_type == 3:
             for channel in range(len(data_image)):

@@ -222,10 +222,11 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(im.s1.shape, im.s2.shape, im.s2_cloudy.shape)
         ic(predictions.dtype, predictions.shape)
         # pdb.set_trace()
+        im.saveSampleIms(im.s1_unnormalized, im.s2, im.s2_cloudy, predictions)
+
         del im.s2_cloudy, im.s1
         #pdb.set_trace()
 
-        im.saveSampleIms(predictions)
 
         pdb.set_trace()
 

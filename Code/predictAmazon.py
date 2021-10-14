@@ -148,6 +148,7 @@ class Image():
         self.s2 = self.s2[:,1000:1000+512, 1000:1000+512]
         self.s2_cloudy = self.s2_cloudy[:,1000:1000+512, 1000:1000+512]
 
+        ic(np.min(self.s1[1]), np.average(self.s1[1]), np.max(self.s1[1]))
 
         
         s2_copy = np.transpose(self.s2, (1, 2, 0))
@@ -173,10 +174,12 @@ class Image():
         ic(np.min(self.s2_cloudy[2]), np.average(self.s2_cloudy[2]), np.max(self.s2_cloudy[2]))
         ic(np.min(self.s2_cloudy[3]), np.average(self.s2_cloudy[3]), np.max(self.s2_cloudy[3]))
         
-
-        self.s2 = self.get_normalized_data(self.s2, data_type = 2)
+        self.s1_unnormalized = self.s1.copy()
+        self.s1 = self.get_normalized_data(self.s1, data_type = 1)
         self.s2_cloudy = self.get_normalized_data(self.s2_cloudy, data_type = 2)
-        self.s1 = self.get_normalized_data(self.s1, data_type = 2)
+        self.s2 = self.get_normalized_data(self.s2, data_type = 2)
+
+        ic(np.min(self.s1[1]), np.average(self.s1[1]), np.max(self.s1[1]))
 
         #pdb.set_trace()
 
@@ -247,12 +250,17 @@ class Image():
 
         # SAR
         if data_type == 1:
+            ic(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
+            ic(data_image.shape)
+#            pdb.set_trace()
             for channel in range(len(data_image)):
+                ic(data_image.shape, self.clip_min, self.clip_max, data_type, channel)
                 data_image[channel] = np.clip(data_image[channel], self.clip_min[data_type - 1][channel],
                                               self.clip_max[data_type - 1][channel])
                 data_image[channel] -= self.clip_min[data_type - 1][channel]
                 data_image[channel] = self.max_val * (data_image[channel] / (
                         self.clip_max[data_type - 1][channel] - self.clip_min[data_type - 1][channel]))
+            ic(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
 
         # OPT
         elif data_type == 2 or data_type == 3:
@@ -266,35 +274,31 @@ class Image():
     
 
     #generate_output_images(data_image, ID[i], predicted_images_path, input_data_folder, cloud_threshold)
-    def saveSampleIms(self, predicted):
+    def saveSampleIms(self, s1, s2, s2_cloudy, predicted):
         predicted *= self.scale
 
-        self.generate_output_images(predicted)
+        self.generate_output_images(s1, s2, s2_cloudy, predicted)
 
+    def generate_output_images(self, s1, s2, s2_cloudy, predicted):
 
-
-    def generate_output_images(self, predicted):
-
-        ##sar_preview = get_preview(filepath_sar, False, [1, 2, 2], sar_composite=True)
+        sar_preview = self.get_preview(s1, True, [1, 2, 2], sar_composite=True)
 
         opt_bands = [4, 3, 2]  # R, G, B bands (S2 channel numbers)
-        ##cloudFree_preview = get_preview(filepath_cloudFree, False, opt_bands, brighten_limit=2000)
-        ##cloudy_preview = get_preview(filepath_cloudy, False, opt_bands)
 
+        cloudFree_preview = self.get_preview(s2, True, opt_bands, brighten_limit=2000)
+        cloudy_preview = self.get_preview(s2_cloudy, True, opt_bands)
+        
         predicted_preview = self.get_preview(predicted, True, opt_bands, 2000)
 
-        ##ic(predicted.shape, filepath_cloudFree)
         ic(np.min(predicted_preview), np.average(predicted_preview), np.max(predicted_preview))
-        ##ic(np.min(cloudFree_preview), np.average(cloudFree_preview), np.max(cloudFree_preview))
+
         predicted_images_path = 'sample_ims'
         scene_name = '2018'
         out_path = make_dir(os.path.join(predicted_images_path, scene_name))
-        ##ic(np.average(cloudFree_preview[-30:-1, -30:-1]), 
-        ##    np.average(predicted_preview[-30:-1, -30:-1]),
-        ##    np.average(cloudy_preview[-30:-1, -30:-1]))
-#        cloud_mask = get_cloud_cloudshadow_mask(get_raw_data(filepath_cloudy), cloud_threshold)
-        self.save_single_images(predicted_preview, out_path)
-    ##    pdb.set_trace()
+
+        self.save_single_images(sar_preview, cloudy_preview, cloudFree_preview, 
+            predicted_preview, out_path)
+
         return
 
 
@@ -317,12 +321,15 @@ class Image():
             return self.get_rgb_preview(r, g, b, sar_composite)
 
 
-    def save_single_images(self, predicted_preview, out_path):
+    def save_single_images(self, sar_preview, cloudy_preview, cloudFree_preview, 
+            predicted_preview, out_path):
 
         pathlib.Path(out_path).mkdir(parents=True, exist_ok=True)
         ##ic(predicted_preview.shape, cloudFree_preview.shape)
     #    pdb.set_trace()
-
+        self.save_single_image(sar_preview, out_path, "inputsar")
+        self.save_single_image(cloudy_preview, out_path, "input")
+        self.save_single_image(cloudFree_preview, out_path, "inputtarg")
         self.save_single_image(predicted_preview, out_path, "inputpred")
 
         return
@@ -360,11 +367,13 @@ class Image():
             # generate SAR composite
             HH = r
             HV = g
+            ic(np.min(HH), np.average(HH), np.std(HH),np.max(HH))
 
             HH = np.clip(HH, -25.0, 0)
             HH = (HH + 25.1) * 255 / 25.1
             HV = np.clip(HV, -32.5, 0)
             HV = (HV + 32.6) * 255 / 32.6
+            ic(np.min(HH), np.average(HH), np.std(HH),np.max(HH))
 
             rgb = np.dstack((np.zeros_like(HH), HH, HV))
 
