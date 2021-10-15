@@ -20,7 +20,7 @@ import pickle
 import tifffile as tiff
 import pathlib
 ic.configureOutput(includeContext=True)
-
+ic.disable()
 def run_dsen2cr(predict_file=None, resume_file=None):
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SETUP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -70,6 +70,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     # training parameters
     initial_epoch = 0  # start at epoch number
     epochs_nr = 8  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
+    epochs_nr = 100  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
+
     if predict_file !=None:    
         batch_size = 1  # training batch size to distribute over GPUs
     else:
@@ -137,7 +139,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
                                        num_layers=num_layers,
                                        feature_size=feature_size,
                                        use_cloud_mask=use_cloud_mask,
-                                       include_sar_input=include_sar_input)
+                                       include_sar_input=include_sar_input,
+                                                  batch_size = batch_size)
     else:
         # handle multiple gpus
         with tf.device('/cpu:0'):
@@ -146,7 +149,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
                                                   num_layers=num_layers,
                                                   feature_size=feature_size,
                                                   use_cloud_mask=use_cloud_mask,
-                                                  include_sar_input=include_sar_input)
+                                                  include_sar_input=include_sar_input,
+                                                  batch_size = batch_size)
 
         model = multi_gpu_model(single_model, gpus=n_gpus)
 
@@ -183,7 +187,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 #        val_filelist = train_filelist[32:64]
 #        ic(train_filelist)
 
-    test_filelist = test_filelist[0:2]
+    #test_filelist = test_filelist[0:2]
     print("Number of train files found: ", len(train_filelist))
     print("Number of validation files found: ", len(val_filelist))
     print("Number of test files found: ", len(test_filelist))
