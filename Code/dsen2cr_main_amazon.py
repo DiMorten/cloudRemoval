@@ -215,12 +215,18 @@ def run_dsen2cr(predict_file=None, resume_file=None):
             predictions = imReconstruction.infer(im.s2_cloudy, im.s1).astype(np.float32)
             #np.save('predictions.npy', predictions)
         else:
-            predictions = np.load('predictions.npy') # .astype(np.float32)
+            predictions = np.load('predictions.npy').astype(np.float32)
 
         ic(np.average(im.s2), np.average(predictions), 
             np.std(im.s2), np.average(predictions))
         
         #===================================== Get metrics ======================#
+        ic(np.mean(np.abs(predictions - im.s2)))
+
+        metrics_get(im.s2, predictions)
+
+
+        pdb.set_trace()
 
         ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy))
         ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
@@ -232,12 +238,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         del im.s2_cloudy, im.s1
         #pdb.set_trace()
 
-        ic(np.mean(np.abs(predictions - im.s2)))
 
-        metrics_get(im.s2, predictions)
-
-
-        pdb.set_trace()
 
 
         #pdb.set_trace()

@@ -71,6 +71,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     initial_epoch = 0  # start at epoch number
     epochs_nr = 8  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
     epochs_nr = 100  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
+    epochs_nr = 500  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
 
     if predict_file !=None:    
         batch_size = 1  # training batch size to distribute over GPUs

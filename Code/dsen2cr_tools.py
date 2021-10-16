@@ -121,7 +121,8 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
 
     if resume_file is not None:
         print("Will resume from the weights in file {}".format(resume_file))
-        model.load_model(resume_file)
+        #from keras.models import load_model
+        model.load_weights(resume_file)
 
     history = model.fit_generator(generator=training_generator,
                         validation_data=validation_generator,
@@ -134,7 +135,6 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
                         max_queue_size=max_queue_size,
                         workers=workers)
 
-    pdb.set_trace()
     # list all data in history
 #    print(history.history.keys())
 
@@ -166,6 +166,7 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
     plt.legend(['train', 'val'], loc='upper left')
     plt.savefig('cloud_psnr_history.png')
 
+    pdb.set_trace()
 
 def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_folder, predict_filelist, batch_size,
                     clip_min, clip_max, crop_size, input_shape, use_cloud_mask, cloud_threshold, max_val_sar,
