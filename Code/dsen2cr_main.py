@@ -28,8 +28,11 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     # TODO implement external hyperparam config file
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Setup model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    model_name = 'DSen2-CR_001'  # model name for training
+    remove_60m_bands = True
 
+    model_name = 'DSen2-CR_001'  # model name for training
+    if remove_60m_bands == True: 
+        model_name = model_name + "_less60m"
     # model parameters
     num_layers = 16  # B value in paper
     feature_size = 256  # F value in paper
@@ -70,8 +73,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     # training parameters
     initial_epoch = 0  # start at epoch number
     epochs_nr = 8  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
-    epochs_nr = 100  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
-    epochs_nr = 500  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
+    #epochs_nr = 100  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
+    #epochs_nr = 500  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
 
     if predict_file !=None:    
         batch_size = 1  # training batch size to distribute over GPUs
@@ -109,8 +112,10 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     workers = 4 * n_gpus
     #workers = 1
     batch_per_gpu = int(batch_size / n_gpus)
-
-    input_shape = ((13, crop_size, crop_size), (2, crop_size, crop_size))
+    if remove_60m_bands == False:
+        input_shape = ((13, crop_size, crop_size), (2, crop_size, crop_size))
+    else:
+        input_shape = ((10, crop_size, crop_size), (2, crop_size, crop_size))
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initialize session %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -214,7 +219,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
                       shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
                       use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder,
-                      input_shape, max_queue_size, use_multi_processing, workers)
+                      input_shape, max_queue_size, use_multi_processing, workers, remove_60m_bands)
 
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MAIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

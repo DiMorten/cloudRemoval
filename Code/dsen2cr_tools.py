@@ -15,7 +15,7 @@ import pathlib
 def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
                   shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
                   use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder, input_shape,
-                  max_queue_size, use_multi_processing, workers):
+                  max_queue_size, use_multi_processing, workers, remove_60m_bands):
     """Start or resume training of DSen2-CR model."""
 
     print('Training model name: {}'.format(model_name))
@@ -67,7 +67,8 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
               'input_data_folder': input_data_folder,
               'use_cloud_mask': use_cloud_mask,
               'max_val_sar': max_val_sar,
-              'cloud_threshold': cloud_threshold}
+              'cloud_threshold': cloud_threshold,
+              'remove_60m_bands': remove_60m_bands}
     val_tensorboard_generator = DataGenerator(val_filelist_tensorboard, **params)
 
     tensorboard = TensorBoardWrapper(val_tensorboard_generator, input_dim=input_shape, nb_steps=1,
@@ -94,7 +95,8 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
               'input_data_folder': input_data_folder,
               'use_cloud_mask': use_cloud_mask,
               'max_val_sar': max_val_sar,
-              'cloud_threshold': cloud_threshold}
+              'cloud_threshold': cloud_threshold,
+              'remove_60m_bands': remove_60m_bands}
     training_generator = DataGenerator(train_filelist, **params)
 
     params = {'input_dim': input_shape,
@@ -110,7 +112,8 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
               'input_data_folder': input_data_folder,
               'use_cloud_mask': use_cloud_mask,
               'max_val_sar': max_val_sar,
-              'cloud_threshold': cloud_threshold
+              'cloud_threshold': cloud_threshold,
+              'remove_60m_bands': remove_60m_bands
               }
 
     validation_generator = DataGenerator(val_filelist, **params)

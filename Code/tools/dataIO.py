@@ -256,12 +256,14 @@ class DataGenerator(keras.utils.Sequence):
                  input_data_folder='./',
                  use_cloud_mask=True,
                  max_val_sar=5,
-                 cloud_threshold=0.2
+                 cloud_threshold=0.2,
+                 remove_60m_bands = False
                  ):
 
         if clip_min is None:
             clip_min = [[-25.0, -32.5], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+        self.remove_60m_bands = remove_60m_bands
         self.input_dim = input_dim
         self.batch_size = batch_size
         ic(list_IDs)
@@ -357,8 +359,8 @@ class DataGenerator(keras.utils.Sequence):
                                           sample in range(len(output_opt_batch))]
                 output_opt_cloud_batch = np.asarray(output_opt_cloud_batch)
                 #print("HEre!!")
-                ##ic(input_opt_batch.shape, input_sar_batch.shape, output_opt_cloud_batch.shape)
-                ##ic(output_opt_batch.shape)
+                #ic(input_opt_batch.shape, input_sar_batch.shape, output_opt_cloud_batch.shape)
+                #ic(output_opt_batch.shape)
                 #pdb.set_trace()
 
                 return ([input_opt_batch, input_sar_batch], [output_opt_cloud_batch])
@@ -417,6 +419,7 @@ class DataGenerator(keras.utils.Sequence):
 
         if data_type == 2 or data_type == 3:
             data_image = self.get_opt_image(data_path, paramx, paramy)
+
         elif data_type == 1:
             data_image = self.get_sar_image(data_path, paramx, paramy)
         else:
@@ -488,6 +491,13 @@ class DataGenerator(keras.utils.Sequence):
                 ic(i, ID, cloud_mask.shape, data_image.shape)
                 cloud_mask_batch[i,] = cloud_mask
 
+            if data_type == 2 or data_type == 3:
+                if self.remove_60m_bands == True:
+                    #ic(np.r_[1:9,11:13])
+                    data_image = data_image[np.r_[1:9,11:13]]
+                    #ic(data_image.shape)
+                    #pdb.set_trace()
+            
             data_image = self.get_normalized_data(data_image, data_type)
 
             batch[i,] = data_image
@@ -498,3 +508,5 @@ class DataGenerator(keras.utils.Sequence):
             return batch, cloud_mask_batch
         else:
             return batch
+
+# %%
