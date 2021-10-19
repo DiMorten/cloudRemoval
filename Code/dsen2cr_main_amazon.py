@@ -24,6 +24,7 @@ import cv2
 import matplotlib.pyplot as plt 
 import tifffile as tiff
 from tools.dataIO import GeoReference_Raster_from_Source_data
+import traceback
 def run_dsen2cr(predict_file=None, resume_file=None):
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SETUP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -65,6 +66,11 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 ##    crop_size = 128  # crop size for training images
     if predict_file !=None:
         crop_size = 256
+        overlap = 0
+        if amazon_flag == True:
+            crop_size = 1024
+            #crop_size = 256
+            overlap = 0.1
     else:
         crop_size = 128  # crop size for training images
 
@@ -176,7 +182,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         test_filelist = entire_filelist.copy()
         train_filelist = test_filelist[:20]
         val_filelist = test_filelist[20:40]
-        ic(test_filelist)
+        #ic(test_filelist)
         
         
     else:
@@ -211,7 +217,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         # load the model weights at checkpoint
         model.load_weights(predict_file)
         date = '2019'
-        im = Image(date = date)
+        crop_sample_im = True
+        im = Image(date = date, crop_sample_im = crop_sample_im)
         ic(np.min(im.s1), np.min(im.s2), np.min(im.s2_cloudy))
         ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy))
         ic(np.max(im.s1), np.max(im.s2), np.max(im.s2_cloudy))
@@ -220,8 +227,11 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
 
 #        root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018"
-        save_id = 'predictions'
-        imReconstruction = ImageReconstruction(model, output_c_dim = 13, patch_size=256)
+        #save_id = 'predictions_scratch'
+        save_id = 'predictions_pretrained'
+        
+        imReconstruction = ImageReconstruction(model, output_c_dim = 13, 
+            patch_size=crop_size, overlap_percent = overlap)
         predictionLoad = False
         #pdb.set_trace()
         if predictionLoad == False:
@@ -242,14 +252,19 @@ def run_dsen2cr(predict_file=None, resume_file=None):
             np.std(im.s2), np.std(predictions))
         #pdb.set_trace()
         #===================================== Get metrics ======================#
-        metrics_get_flag = False
+        metrics_get_flag = True
         if metrics_get_flag == True:
             #if remove_60m_bands == True:
             ##metrics_get(im.s2, predictions)
             #else:
+            #try:
             metrics_get(im.s2[np.r_[1:9,11:13]], predictions[np.r_[1:9,11:13]])
+            #except Exception:
+            #    print(traceback.format_exc())
+            #    pass
 
-            #pdb.set_trace()
+
+            pdb.set_trace()
 
         ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy), np.average(predictions))
         ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)

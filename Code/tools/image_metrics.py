@@ -19,12 +19,13 @@ def metrics_get(y_true, y_pred):
 
     cloud_psnr = np_cloud_psnr(y_true, y_pred)
     sam = np_cloud_mean_sam(y_true, y_pred)
-    #ssim = SSIM_large_image(y_true, y_pred)
+    ssim = SSIM_large_image(y_true, y_pred)
     ic(cloud_mean_absolute_error,
         cloud_mean_squared_error,
         cloud_root_mean_squared_error,
         cloud_psnr,
-        sam)
+        sam,#,
+        ssim)
 
 
 def np_cloud_mean_absolute_error(y_true, y_pred):
@@ -89,20 +90,24 @@ def SSIM(y_true, y_pred):
     """Computes the SSIM over the full image."""
     y_true = np.clip(y_true, 0, 10000.0)
     y_pred = np.clip(y_pred, 0, 10000.0)
-    ssim = structural_similarity(y_true, y_pred, data_range=10000.0)
+    ssim = structural_similarity(y_true, y_pred, data_range=10000.0, multichannel = True)
     return ssim
 
 #(...)
 def SSIM_large_image(y_true, y_pred):
     sz = 3 # increase this number if there is not enough RAM
-    rs, cs, _ = np.asarray(y_true.shape) // sz
+    rs, cs, _ = np.asarray(np.transpose(y_true,(1,2,0)).shape) // sz
+    ic(rs, cs)
     ssim_0 = []
     for i in range(sz):
         i_ = rs*2 if i == sz-1 else rs
-    for j in range(sz):
-        j_ = cs*2 if j == sz-1 else cs
-    ssim_0.append(SSIM(y_true     [i*rs:i*rs+i_, j*cs:j*cs+j_, :],
-    y_pred[i*rs:i*rs+i_, j*cs:j*cs+j_, :]))
+        for j in range(sz):
+            j_ = cs*2 if j == sz-1 else cs
+            ic(y_true.shape)
+            ic(np.transpose(y_true,(1,2,0))[i*rs:i*rs+i_, j*cs:j*cs+j_, :].shape)
+            ic(i, i*rs, i*rs+i_, j, j*cs, j*cs+j_)
+            ssim_0.append(SSIM(np.transpose(y_true,(1,2,0))[i*rs:i*rs+i_, j*cs:j*cs+j_, :],
+                np.transpose(y_pred,(1,2,0))[i*rs:i*rs+i_, j*cs:j*cs+j_, :]))
 
     return np.asarray(ssim_0).mean()
 

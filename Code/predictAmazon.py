@@ -69,7 +69,7 @@ class ImageReconstruction(object):
         probs = np.zeros((self.output_c_dim, k1*stride, k2*stride), dtype = np.float32)
 
         for i in range(k1):
-            if i % 10 == 0:
+            if i % 5 == 0:
                 print("i = {}".format(i))
             for j in range(k2):
                 
@@ -99,7 +99,10 @@ class ImageReconstruction(object):
 
 class Image():
     def __init__(self, root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/",
-        date = '2018'):
+        date = '2018', crop_sample_im = False):
+
+        self.crop_sample_im = crop_sample_im
+
         print("creating ImageLoading object...")
 
         self.root_path = root_path
@@ -170,9 +173,10 @@ class Image():
         #delta_crop = 1500
         delta_crop = 1500
         
-        #self.s1 = self.s1[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
-        #self.s2 = self.s2[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
-        #self.s2_cloudy = self.s2_cloudy[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
+        if self.crop_sample_im == True:
+            self.s1 = self.s1[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
+            self.s2 = self.s2[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
+            self.s2_cloudy = self.s2_cloudy[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
 
         ic(np.min(self.s1[1]), np.average(self.s1[1]), np.max(self.s1[1]))
 
