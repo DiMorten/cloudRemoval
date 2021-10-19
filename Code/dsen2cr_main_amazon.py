@@ -23,6 +23,7 @@ from tools.image_metrics import metrics_get
 import cv2
 import matplotlib.pyplot as plt 
 import tifffile as tiff
+from tools.dataIO import GeoReference_Raster_from_Source_data
 def run_dsen2cr(predict_file=None, resume_file=None):
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SETUP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -30,7 +31,11 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     # TODO implement external hyperparam config file
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Setup model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+    remove_60m_bands = False
+
     model_name = 'DSen2-CR_001'  # model name for training
+    if remove_60m_bands == True: 
+        model_name = model_name + "_less60m"
 
     # model parameters
     num_layers = 16  # B value in paper
@@ -56,6 +61,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     data_augmentation = True  # flip and rotate images randomly for data augmentation
 
     random_crop = True  # crop out a part of the input image randomly
+    amazon_flag = True
 ##    crop_size = 128  # crop size for training images
     if predict_file !=None:
         crop_size = 256
@@ -204,40 +210,64 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         
         # load the model weights at checkpoint
         model.load_weights(predict_file)
-        
-        im = Image()
+        date = '2019'
+        im = Image(date = date)
+        ic(np.min(im.s1), np.min(im.s2), np.min(im.s2_cloudy))
         ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy))
+        ic(np.max(im.s1), np.max(im.s2), np.max(im.s2_cloudy))
+        ic(np.std(im.s1), np.std(im.s2), np.std(im.s2_cloudy))
+
         ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
+
+#        root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018"
+        save_id = 'predictions'
         imReconstruction = ImageReconstruction(model, output_c_dim = 13, patch_size=256)
         predictionLoad = False
         #pdb.set_trace()
         if predictionLoad == False:
             predictions = imReconstruction.infer(im.s2_cloudy, im.s1).astype(np.float32)
-            #np.save('predictions.npy', predictions)
+            save_unnormalized = True
+            # save_id = 'predictions_scratch'
+            
+            
+                
+            np.save(save_id+date+'.npy', predictions)
+            if save_unnormalized == True:
+                np.save(save_id+'_unnorm_' + date+'.npy', predictions*2000)
+
         else:
-            predictions = np.load('predictions.npy').astype(np.float32)
+            predictions = np.load(save_id+date+'.npy').astype(np.float32)
 
         ic(np.average(im.s2), np.average(predictions), 
-            np.std(im.s2), np.average(predictions))
-        
+            np.std(im.s2), np.std(predictions))
+        #pdb.set_trace()
         #===================================== Get metrics ======================#
-        ic(np.mean(np.abs(predictions - im.s2)))
+        metrics_get_flag = False
+        if metrics_get_flag == True:
+            #if remove_60m_bands == True:
+            ##metrics_get(im.s2, predictions)
+            #else:
+            metrics_get(im.s2[np.r_[1:9,11:13]], predictions[np.r_[1:9,11:13]])
 
-        metrics_get(im.s2, predictions)
+            #pdb.set_trace()
 
-
-        pdb.set_trace()
-
-        ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy))
+        ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy), np.average(predictions))
         ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
         ic(im.s1.shape, im.s2.shape, im.s2_cloudy.shape)
         ic(predictions.dtype, predictions.shape)
         # pdb.set_trace()
+
+        original_im_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif"
+        produced_im_path = save_id+"_"+date+".tif"
+        GeoReference_Raster_from_Source_data(original_im_path, 
+            predictions*2000, produced_im_path, bands = 13)
+        pdb.set_trace()
+
+
         im.saveSampleIms(im.s1_unnormalized, im.s2, im.s2_cloudy, predictions)
 
         del im.s2_cloudy, im.s1
         #pdb.set_trace()
-
 
 
 
@@ -263,22 +293,22 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(im.s2[:,:,1:4].astype(np.int16).shape)
         tiff.imsave('s2_saved_after.tif', im.s2[:,:,1:4].astype(np.int16), photometric='rgb')
         
-        plt.figure(figsize=(5,10))
-        plt.imshow(im.s2[:,:,1:4].astype(np.int16))
-        plt.axis('off')
-        plt.savefig('s2_rgb.png')
+        #plt.figure(figsize=(5,10))
+        #plt.imshow(im.s2[:,:,1:4].astype(np.int16))
+        #plt.axis('off')
+        #plt.savefig('s2_rgb.png')
         #plt.show()
         #pdb.set_trace()        
         #predictions_rgb = predictions[1:4].astype(np.int)
         predictions = np.transpose(predictions, (1, 2, 0))
         ic(predictions[:,:,1:4].astype(np.int16).shape)
 
-        tiff.imsave('predictions_saved.tif', predictions[:,:,1:4].astype(np.int16), photometric='rgb')
+        ##tiff.imsave('predictions_saved.tif', predictions[:,:,1:4].astype(np.int16), photometric='rgb')
         
-        plt.figure(figsize=(5,10))
-        plt.imshow(predictions[:,:,1:4].astype(np.int16))
-        plt.axis('off')
-        plt.savefig('predictions_rgb.png')
+        #plt.figure(figsize=(5,10))
+        #plt.imshow(predictions[:,:,1:4].astype(np.int16))
+        #plt.axis('off')
+        #plt.savefig('predictions_rgb.png')
         #plt.show()
         #==================== histogram
         plt.figure()

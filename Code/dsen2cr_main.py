@@ -73,7 +73,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     # training parameters
     initial_epoch = 0  # start at epoch number
     epochs_nr = 8  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
-    #epochs_nr = 100  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
+    epochs_nr = 100  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
     #epochs_nr = 500  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
 
     if predict_file !=None:    
@@ -210,7 +210,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 
         predict_dsen2cr(predict_file, model, predict_data_type, base_out_path, input_data_folder, predict_filelist,
                         batch_size, clip_min, clip_max, crop_size, input_shape, use_cloud_mask, cloud_threshold,
-                        max_val_sar, scale)
+                        max_val_sar, scale, remove_60m_bands)
 
 
     else:

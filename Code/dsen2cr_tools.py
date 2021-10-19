@@ -173,7 +173,7 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
 
 def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_folder, predict_filelist, batch_size,
                     clip_min, clip_max, crop_size, input_shape, use_cloud_mask, cloud_threshold, max_val_sar,
-                    scale):
+                    scale, remove_60m_bands):
     print("Predicting using file: {}".format(predict_file))
     print("Using this model: {}".format(model_name))
 
@@ -222,7 +222,7 @@ def predict_dsen2cr(predict_file, model, model_name, base_out_path, input_data_f
             batch_size = 1
             process_predicted(predicted, predict_filelist[i * batch_size:i * batch_size + batch_size],
                               predicted_images_path,
-                              scale, cloud_threshold, input_data_folder)
+                              scale, cloud_threshold, input_data_folder, remove_60m_bands)
 
     print("Prediction finished with success!")
 

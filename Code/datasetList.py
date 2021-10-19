@@ -317,7 +317,7 @@ if __name__ == "__main__":
 
     start = time.time()
     # Load all bands of all patches in a specified scene (scene 15)
-    '''
+    
     scene = 17
     s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SPRING, scene, s1_bands=S1Bands.ALL, 
                                         s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
@@ -326,21 +326,21 @@ if __name__ == "__main__":
     scene = 39
     s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.FALL, scene, s1_bands=S1Bands.ALL, 
                                         s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
-    '''
+    
 
-    #scene = 86
-    #s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SUMMER, scene, s1_bands=S1Bands.ALL, 
-    #                                    s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
-
-    scene = 40
-    s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SPRING, scene, s1_bands=S1Bands.ALL, 
+    scene = 86
+    s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SUMMER, scene, s1_bands=S1Bands.ALL, 
                                         s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
-    '''
+
+    #scene = 40
+    #s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SPRING, scene, s1_bands=S1Bands.ALL, 
+    #                                    s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
+    #'''
 
     scene = 120
     s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SUMMER, scene, s1_bands=S1Bands.ALL, 
                                         s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
-    '''
+    
 
     print(f"Scene: 106, S1: {s1.shape}, S2: {s2.shape}, cloudy S2: {s2cloudy.shape}")
     print("Time Taken {}s".format(time.time() - start))
@@ -378,6 +378,7 @@ if __name__ == "__main__":
 #    s1_list = [x[68:] for x in s1_list]
 
 #    print(s1_list)
+    
     """
     full_list = []
     for idx in len(s1_list):

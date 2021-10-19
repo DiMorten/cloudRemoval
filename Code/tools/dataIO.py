@@ -137,7 +137,8 @@ def get_preview(file, predicted_file, bands, brighten_limit=None, sar_composite=
         return get_rgb_preview(r, g, b, sar_composite)
 
 
-def generate_output_images(predicted, ID, predicted_images_path, input_data_folder, cloud_threshold):
+def generate_output_images(predicted, ID, predicted_images_path, 
+    input_data_folder, cloud_threshold, remove_60m_bands):
     scene_name, filepath_sar, filepath_cloudFree, filepath_cloudy = get_info_quartet(ID,
                                                                                      predicted_images_path,
                                                                                      input_data_folder)
@@ -147,8 +148,11 @@ def generate_output_images(predicted, ID, predicted_images_path, input_data_fold
     print("Generating quartet for ", scene_name)
 
     sar_preview = get_preview(filepath_sar, False, [1, 2, 2], sar_composite=True)
+    if remove_60m_bands == False:
+        opt_bands = [4, 3, 2]  # R, G, B bands (S2 channel numbers)
+    else:
+        opt_bands = [3, 2, 1]  # R, G, B bands (S2 channel numbers)
 
-    opt_bands = [4, 3, 2]  # R, G, B bands (S2 channel numbers)
     cloudFree_preview = get_preview(filepath_cloudFree, False, opt_bands, brighten_limit=2000)
     cloudy_preview = get_preview(filepath_cloudy, False, opt_bands)
     cloudy_preview_brightened = get_preview(filepath_cloudy, False, opt_bands, brighten_limit=2000)
@@ -220,13 +224,15 @@ def save_single_images(sar_preview, cloudy_preview, cloudFree_preview, predicted
     return
 
 
-def process_predicted(predicted, ID, predicted_images_path, scale, cloud_threshold, input_data_folder):
+def process_predicted(predicted, ID, predicted_images_path, scale, 
+    cloud_threshold, input_data_folder, remove_60m_bands):
     ##ic(ID)
     ##ic(predicted.shape)
     for i, data_image in enumerate(predicted):
         data_image *= scale
         ##ic(i)
-        generate_output_images(data_image, ID[i], predicted_images_path, input_data_folder, cloud_threshold)
+        generate_output_images(data_image, ID[i], predicted_images_path, 
+            input_data_folder, cloud_threshold, remove_60m_bands)
 
     return
 
@@ -510,3 +516,17 @@ class DataGenerator(keras.utils.Sequence):
             return batch
 
 # %%
+
+
+
+
+def GeoReference_Raster_from_Source_data(source_file, 
+    numpy_image, target_file, bands):
+
+    with rasterio.open(source_file) as src:
+        ras_meta = src.profile
+
+    ras_meta.update(count=bands)
+
+    with rasterio.open(target_file, 'w', **ras_meta) as dst:
+        dst.write(numpy_image)

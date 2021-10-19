@@ -3,8 +3,10 @@ import tensorflow as tf
 from icecream import ic
 import numpy as np
 ic.enable()
+from skimage.metrics import structural_similarity
+import numpy as np
 
-remove_60m_bands = True
+remove_60m_bands = False
 if remove_60m_bands == False:
     s2_bands = 13
 else:
@@ -13,11 +15,16 @@ else:
 def metrics_get(y_true, y_pred):
     cloud_mean_absolute_error = np_cloud_mean_absolute_error(y_true, y_pred)
     cloud_mean_squared_error = np_cloud_mean_squared_error(y_true, y_pred)
-    cloud_psnr = np_cloud_psnr(y_true, y_pred)
+    cloud_root_mean_squared_error = np_cloud_root_mean_squared_error(y_true, y_pred)
 
+    cloud_psnr = np_cloud_psnr(y_true, y_pred)
+    sam = np_cloud_mean_sam(y_true, y_pred)
+    #ssim = SSIM_large_image(y_true, y_pred)
     ic(cloud_mean_absolute_error,
         cloud_mean_squared_error,
-        cloud_psnr)
+        cloud_root_mean_squared_error,
+        cloud_psnr,
+        sam)
 
 
 def np_cloud_mean_absolute_error(y_true, y_pred):
@@ -30,16 +37,21 @@ def np_cloud_mean_squared_error(y_true, y_pred):
 
 def np_cloud_psnr(y_true, y_predict):
     """Computes the PSNR over the full image."""
-    y_true *= 2000
-    y_predict *= 2000
-    rmse = np.sqrt(np.mean(np.square(y_predict[..., 0:s2_bands, :, :] - y_true[..., 0:s2_bands, :, :])))
+#    y_true *= 2000
+#    y_predict *= 2000
+    rmse = np.sqrt(np.mean(np.square((y_predict * 2000)[..., 0:s2_bands, :, :] - (y_true * 2000)[..., 0:s2_bands, :, :])))
 
     return 20.0 * (np.log(10000.0 / rmse) / np.log(10.0))
 
+def np_cloud_root_mean_squared_error(y_true, y_pred):
+    """Computes the RMSE over the full image."""
+    return np.sqrt(np.mean(np.square(y_pred[:, 0:s2_bands, :, :] - y_true[:, 0:s2_bands, :, :])))
 
+# ==== Metrics for Amazon image
 def np_cloud_mean_absolute_error(y_true, y_pred):
     """Computes the MAE over the full image."""
     return np.mean(np.abs(y_pred - y_true))
+
 
 def np_cloud_mean_squared_error(y_true, y_pred):
     """Computes the MSE over the full image."""
@@ -54,6 +66,47 @@ def np_cloud_psnr(y_true, y_predict):
     return 20.0 * (np.log(10000.0 / rmse) / np.log(10.0))
 
 
+def np_cloud_root_mean_squared_error(y_true, y_pred):
+    """Computes the RMSE over the full image."""
+    return np.sqrt(np.mean(np.square(y_pred - y_true)))
+
+def np_get_sam(y_true, y_predict):
+    """Computes the SAM array."""
+    mat = np.multiply(y_true, y_predict)
+    mat = np.sum(mat, 0)
+    mat = np.divide(mat, np.sqrt(np.sum(np.multiply(y_true, y_true), 0)))
+    mat = np.divide(mat, np.sqrt(np.sum(np.multiply(y_predict, y_predict), 0)))
+    mat = np.arccos(np.clip(mat, -1, 1))
+
+    return mat
+def np_cloud_mean_sam(y_true, y_predict):
+    """Computes the SAM over the full image."""
+    mat = np_get_sam(y_true, y_predict)
+
+    return np.mean(mat)
+
+def SSIM(y_true, y_pred):
+    """Computes the SSIM over the full image."""
+    y_true = np.clip(y_true, 0, 10000.0)
+    y_pred = np.clip(y_pred, 0, 10000.0)
+    ssim = structural_similarity(y_true, y_pred, data_range=10000.0)
+    return ssim
+
+#(...)
+def SSIM_large_image(y_true, y_pred):
+    sz = 3 # increase this number if there is not enough RAM
+    rs, cs, _ = np.asarray(y_true.shape) // sz
+    ssim_0 = []
+    for i in range(sz):
+        i_ = rs*2 if i == sz-1 else rs
+    for j in range(sz):
+        j_ = cs*2 if j == sz-1 else cs
+    ssim_0.append(SSIM(y_true     [i*rs:i*rs+i_, j*cs:j*cs+j_, :],
+    y_pred[i*rs:i*rs+i_, j*cs:j*cs+j_, :]))
+
+    return np.asarray(ssim_0).mean()
+
+#==== end metrics for Amazon image
 
 def cloud_mean_absolute_error(y_true, y_pred):
     """Computes the MAE over the full image."""
