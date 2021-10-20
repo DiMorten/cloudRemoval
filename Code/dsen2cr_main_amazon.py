@@ -32,11 +32,14 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     # TODO implement external hyperparam config file
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Setup model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    remove_60m_bands = False
+    remove_60m_bands = True
 
     model_name = 'DSen2-CR_001'  # model name for training
     if remove_60m_bands == True: 
         model_name = model_name + "_less60m"
+        bands = 10
+    else:
+        bands = 13
 
     # model parameters
     num_layers = 16  # B value in paper
@@ -121,7 +124,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     #workers = 1
     batch_per_gpu = int(batch_size / n_gpus)
 
-    input_shape = ((13, crop_size, crop_size), (2, crop_size, crop_size))
+    input_shape = ((bands, crop_size, crop_size), (2, crop_size, crop_size))
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initialize session %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -210,14 +213,14 @@ def run_dsen2cr(predict_file=None, resume_file=None):
             predict_filelist = test_filelist
         else:
             raise ValueError('Prediction data type not recognized.')
-        ic(predict_filelist)
+        #ic(predict_filelist)
 
         print("Predicting using file: {}".format(predict_file))
         
         # load the model weights at checkpoint
         model.load_weights(predict_file)
-        date = '2019'
-        crop_sample_im = True
+        date = '2018'
+        crop_sample_im = False
         im = Image(date = date, crop_sample_im = crop_sample_im)
         ic(np.min(im.s1), np.min(im.s2), np.min(im.s2_cloudy))
         ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy))
@@ -228,14 +231,20 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 
 #        root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018"
         #save_id = 'predictions_scratch'
-        save_id = 'predictions_pretrained'
+        #save_id = 'predictions_pretrained'
+        save_id = 'predictions_remove60m'
         
-        imReconstruction = ImageReconstruction(model, output_c_dim = 13, 
+        
+        imReconstruction = ImageReconstruction(model, output_c_dim = bands, 
             patch_size=crop_size, overlap_percent = overlap)
         predictionLoad = False
         #pdb.set_trace()
         if predictionLoad == False:
-            predictions = imReconstruction.infer(im.s2_cloudy, im.s1).astype(np.float32)
+            if remove_60m_bands == False:
+                predictions = imReconstruction.infer(im.s2_cloudy, im.s1).astype(np.float32)
+            else:
+                predictions = imReconstruction.infer(im.s2_cloudy[np.r_[1:9,11:13]], im.s1).astype(np.float32)
+
             save_unnormalized = True
             # save_id = 'predictions_scratch'
             
@@ -250,21 +259,24 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 
         ic(np.average(im.s2), np.average(predictions), 
             np.std(im.s2), np.std(predictions))
+        ic(np.min(predictions*2000), np.average(predictions*2000), 
+            np.std(predictions*2000), np.max(predictions*2000))
+            
         #pdb.set_trace()
         #===================================== Get metrics ======================#
         metrics_get_flag = True
         if metrics_get_flag == True:
-            #if remove_60m_bands == True:
-            ##metrics_get(im.s2, predictions)
-            #else:
-            #try:
-            metrics_get(im.s2[np.r_[1:9,11:13]], predictions[np.r_[1:9,11:13]])
+            if remove_60m_bands == True:
+                metrics_get(im.s2[np.r_[1:9,11:13]], predictions)
+            else:
+                metrics_get(im.s2, predictions)
+
             #except Exception:
             #    print(traceback.format_exc())
             #    pass
 
 
-            pdb.set_trace()
+            #pdb.set_trace()
 
         ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy), np.average(predictions))
         ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
@@ -275,7 +287,11 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         original_im_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif"
         produced_im_path = save_id+"_"+date+".tif"
         GeoReference_Raster_from_Source_data(original_im_path, 
-            predictions*2000, produced_im_path, bands = 13)
+            predictions*2000, produced_im_path, bands = bands)
+        GeoReference_Raster_from_Source_data(original_im_path, 
+            im.s2*2000, "s2_"+date+".tif", bands = im.s2.shape[0])
+        GeoReference_Raster_from_Source_data(original_im_path, 
+            im.s2_cloudy*2000, "s2_cloudy_"+date+".tif", bands = im.s2_cloudy.shape[0])        
         pdb.set_trace()
 
 

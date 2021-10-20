@@ -6,7 +6,7 @@ ic.enable()
 from skimage.metrics import structural_similarity
 import numpy as np
 
-remove_60m_bands = False
+remove_60m_bands = True
 if remove_60m_bands == False:
     s2_bands = 13
 else:
@@ -19,13 +19,14 @@ def metrics_get(y_true, y_pred):
 
     cloud_psnr = np_cloud_psnr(y_true, y_pred)
     sam = np_cloud_mean_sam(y_true, y_pred)
-    ssim = SSIM_large_image(y_true, y_pred)
     ic(cloud_mean_absolute_error,
         cloud_mean_squared_error,
         cloud_root_mean_squared_error,
         cloud_psnr,
-        sam,#,
-        ssim)
+        sam)#,
+    ssim = SSIM_large_image(y_true * 2000, y_pred * 2000)
+
+    ic(ssim)
 
 
 def np_cloud_mean_absolute_error(y_true, y_pred):
@@ -60,9 +61,9 @@ def np_cloud_mean_squared_error(y_true, y_pred):
 
 def np_cloud_psnr(y_true, y_predict):
     """Computes the PSNR over the full image."""
-    y_true *= 2000
-    y_predict *= 2000
-    rmse = np.sqrt(np.mean(np.square(y_predict - y_true)))
+    #y_true *= 2000
+    #y_predict *= 2000
+    rmse = np.sqrt(np.mean(np.square(y_predict * 2000 - y_true * 2000)))
 
     return 20.0 * (np.log(10000.0 / rmse) / np.log(10.0))
 
@@ -95,17 +96,20 @@ def SSIM(y_true, y_pred):
 
 #(...)
 def SSIM_large_image(y_true, y_pred):
+    ic(np.average(y_true), np.average(y_pred))
     sz = 3 # increase this number if there is not enough RAM
     rs, cs, _ = np.asarray(np.transpose(y_true,(1,2,0)).shape) // sz
     ic(rs, cs)
     ssim_0 = []
     for i in range(sz):
+        
         i_ = rs*2 if i == sz-1 else rs
         for j in range(sz):
+            ic(i,j)
             j_ = cs*2 if j == sz-1 else cs
-            ic(y_true.shape)
-            ic(np.transpose(y_true,(1,2,0))[i*rs:i*rs+i_, j*cs:j*cs+j_, :].shape)
-            ic(i, i*rs, i*rs+i_, j, j*cs, j*cs+j_)
+            #ic(y_true.shape)
+            #ic(np.transpose(y_true,(1,2,0))[i*rs:i*rs+i_, j*cs:j*cs+j_, :].shape)
+            #ic(i, i*rs, i*rs+i_, j, j*cs, j*cs+j_)
             ssim_0.append(SSIM(np.transpose(y_true,(1,2,0))[i*rs:i*rs+i_, j*cs:j*cs+j_, :],
                 np.transpose(y_pred,(1,2,0))[i*rs:i*rs+i_, j*cs:j*cs+j_, :]))
 
@@ -148,6 +152,9 @@ def cloud_ssim(y_true, y_pred):
 
     ssim = tf.image.ssim(y_true, y_pred, max_val=10000.0)
     ssim = tf.reduce_mean(ssim)
+    
+    y_true /= 2000
+    y_pred /= 2000
 
     return ssim
 

@@ -81,8 +81,7 @@ class ImageReconstruction(object):
                 
                 # infer = self.sess.run(self.tensor, feed_dict={inputs: patch})
 
-                predicted = self.model.predict_on_batch([patch_s2, patch_s1])[:, 0:13]
-
+                predicted = self.model.predict_on_batch([patch_s2, patch_s1])[:, 0:self.output_c_dim]
                 probs[:, i*stride : i*stride+stride, 
                       j*stride : j*stride+stride] = predicted[0, :, overlap//2 : overlap//2 + stride, 
                                                                 overlap//2 : overlap//2 + stride]
@@ -119,7 +118,7 @@ class Image():
         self.scale = scale
         self.date = date
         #imOptical = self.loadImage(root_path + "")
-        loadIms=True
+        loadIms=False
         if loadIms == False:
             print("Loading sar..")
             self.s1 = self.loadSar()
@@ -177,6 +176,8 @@ class Image():
             self.s1 = self.s1[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
             self.s2 = self.s2[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
             self.s2_cloudy = self.s2_cloudy[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
+
+        ic(np.min(self.s2), np.average(self.s2), np.std(self.s2), np.max(self.s2))
 
         ic(np.min(self.s1[1]), np.average(self.s1[1]), np.max(self.s1[1]))
 
