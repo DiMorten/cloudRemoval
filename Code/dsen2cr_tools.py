@@ -4,7 +4,7 @@ from random import shuffle
 from icecream import ic
 import pdb
 from tools.dataIO import make_dir, DataGenerator, process_predicted
-from keras.callbacks import ModelCheckpoint, CSVLogger
+from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
 from keras.utils import plot_model
 from tools.myCallbacks import CSV_NBatchLogger, NBatchLogger, TensorBoardWrapper
 import numpy as np
@@ -76,10 +76,11 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
                                      write_graph=False,
                                      batch_nr=batch_size, write_grads=True, update_freq=500,
                                      learning_phase=False)
+    es = EarlyStopping(monitor='loss', patience=3)
 
     # define callbacks list
     callbacks_list = [checkpoint, csv_logger, batch_logger, csv_batch_logger, tensorboard]
-    callbacks_list = [checkpoint]
+    callbacks_list = [checkpoint, es]
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initialize training %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     params = {'input_dim': input_shape,

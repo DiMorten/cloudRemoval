@@ -28,7 +28,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     # TODO implement external hyperparam config file
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Setup model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    remove_60m_bands = True
+    remove_60m_bands = False
 
     model_name = 'DSen2-CR_001'  # model name for training
     if remove_60m_bands == True: 

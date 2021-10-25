@@ -331,15 +331,18 @@ if __name__ == "__main__":
     scene = 86
     s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SUMMER, scene, s1_bands=S1Bands.ALL, 
                                         s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
+    '''
 
-    #scene = 40
-    #s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SPRING, scene, s1_bands=S1Bands.ALL, 
-    #                                    s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
-    #'''
+    scene = 40
+    s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SPRING, scene, s1_bands=S1Bands.ALL, 
+                                        s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
+    
+    '''
 
     scene = 120
     s1, s2, s2cloudy, _ = sen12mscr.get_triplets(Seasons.SUMMER, scene, s1_bands=S1Bands.ALL, 
                                         s2_bands=S2Bands.ALL, s2cloudy_bands=S2Bands.ALL)
+    
     
 
     print(f"Scene: 106, S1: {s1.shape}, S2: {s2.shape}, cloudy S2: {s2cloudy.shape}")
@@ -371,7 +374,10 @@ if __name__ == "__main__":
 
     import pickle
 
-    with open("full_list.txt", "wb") as fp:   #Pickling
+    #list_name = "full_list.txt"
+    list_name = "val_list.txt"
+
+    with open(list_name, "wb") as fp:   #Pickling
         pickle.dump(full_list, fp)
 
 #        pdb.set_trace()

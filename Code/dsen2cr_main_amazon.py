@@ -32,7 +32,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     # TODO implement external hyperparam config file
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Setup model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    remove_60m_bands = True
+    remove_60m_bands = False
 
     model_name = 'DSen2-CR_001'  # model name for training
     if remove_60m_bands == True: 
@@ -179,12 +179,15 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     
     with open("full_list.txt", "rb") as fp:   # Unpickling
         entire_filelist = pickle.load(fp)
+    with open("val_list.txt", "rb") as fp:   # Unpickling
+        val_filelist = pickle.load(fp)
 
     if predict_file != None:
 
         test_filelist = entire_filelist.copy()
         train_filelist = test_filelist[:20]
-        val_filelist = test_filelist[20:40]
+        #val_filelist = test_filelist[20:40]
+        val_filelist = val_filelist[0:200]
         #ic(test_filelist)
         
         
@@ -230,9 +233,9 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
 
 #        root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018"
-        #save_id = 'predictions_scratch'
+        save_id = 'predictions_scratch'
         #save_id = 'predictions_pretrained'
-        save_id = 'predictions_remove60m'
+        #save_id = 'predictions_remove60m'
         
         
         imReconstruction = ImageReconstruction(model, output_c_dim = bands, 
@@ -248,7 +251,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
             save_unnormalized = True
             # save_id = 'predictions_scratch'
             
-            
+            predictions = np.clip(predictions, 0, 10000.0)
                 
             np.save(save_id+date+'.npy', predictions)
             if save_unnormalized == True:
