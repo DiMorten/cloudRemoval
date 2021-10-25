@@ -530,3 +530,65 @@ def GeoReference_Raster_from_Source_data(source_file,
 
     with rasterio.open(target_file, 'w', **ras_meta) as dst:
         dst.write(numpy_image)
+
+def Split_in_Patches(rows, cols, patch_size, mask, 
+                     augmentation_list, 
+                     prefix=0, percent=0):
+
+    """
+    Everything  in this function is made operating with
+    the upper left corner of the patch
+    mask: tr, vl, ts
+    lbl: labels
+    prefix: refers to a certain image (t0 or t1)
+    percent: overlap between consecutive patches
+    """
+
+    # Percent of overlap between consecutive patches.
+    overlap = round(patch_size * percent)
+    overlap -= overlap % 2
+    stride = patch_size - overlap
+    # Add Padding to the image to match with the patch size
+    step_row = (stride - rows % stride) % stride
+    step_col = (stride - cols % stride) % stride
+    pad_tuple_msk = ( (overlap//2, overlap//2 + step_row), ((overlap//2, overlap//2 + step_col)) )
+    # lbl = np.pad(lbl, pad_tuple_msk, mode = 'symmetric')
+    mask_pad = np.pad(mask, pad_tuple_msk, mode = 'symmetric')
+    # cloud_mask = np.pad(cloud_mask, pad_tuple_msk, mode = 'symmetric')
+
+    k1, k2 = (rows+step_row)//stride, (cols+step_col)//stride
+    print('Total number of patches: %d x %d' %(k1, k2))
+
+    train_mask = np.zeros_like(mask_pad)
+    val_mask = np.zeros_like(mask_pad)
+    test_mask = np.zeros_like(mask_pad)
+    train_mask[mask_pad==0] = 1
+    test_mask [mask_pad==2] = 1
+    val_mask = (1-train_mask) * (1-test_mask)
+
+    train_patches, val_patches, test_patches = [], [], []
+    only_bck_patches = 0
+    cloudy_patches = 0
+    # lbl[lbl!=1] = 0
+    for i in range(k1):
+        for j in range(k2):
+            # Train
+            if train_mask[i*stride:i*stride + patch_size, j*stride:j*stride + patch_size].all():
+                ## if cloud_mask[i*stride:i*stride + patch_size, j*stride:j*stride + patch_size].any():
+                ##     cloudy_patches += 1
+                ##     continue
+                for k in augmentation_list:
+                    train_patches.append((prefix, i*stride, j*stride, k))
+                ## if not lbl[i*stride:i*stride + patch_size, j*stride:j*stride + patch_size].any():
+                    # train_patches.append((prefix, i*stride, j*stride, 0))
+                ##    only_bck_patches += 1
+            # Test                !!!!!Not necessary with high overlap!!!!!!!!
+            elif test_mask[i*stride:i*stride + patch_size, j*stride:j*stride + patch_size].all():
+                test_patches.append((prefix, i*stride, j*stride, 0))
+            # Val                 !!!!!Not necessary with high overlap!!!!!!!!
+            elif val_mask[i*stride:i*stride + patch_size, j*stride:j*stride + patch_size].all():
+                val_patches.append((prefix, i*stride, j*stride, 0))
+    ## print('Training Patches with background only: %d' %(only_bck_patches))
+    ## print('Patches with clouds in the cloud-free image: %d' %(cloudy_patches))
+    
+    return train_patches, val_patches, test_patches, step_row, step_col, overlap

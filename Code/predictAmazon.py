@@ -118,7 +118,7 @@ class Image():
         self.scale = scale
         self.date = date
         #imOptical = self.loadImage(root_path + "")
-        loadIms=False
+        loadIms=True
         if loadIms == False:
             print("Loading sar..")
             self.s1 = self.loadSar()
@@ -167,19 +167,19 @@ class Image():
         #self.s2 = self.s2[:,1000:1000+512, 1000:1000+512]
         #self.s2_cloudy = self.s2_cloudy[:,1000:1000+512, 1000:1000+512]
 
-        crop0 = 1000
-        #crop0 = 3000
-        #delta_crop = 1500
-        delta_crop = 1500
+        self.crop0 = 1000
+        #self.crop0 = 3000
+        #self.delta_crop = 1500
+        self.delta_crop = 1500
         
         if self.crop_sample_im == True:
-            self.s1 = self.s1[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
-            self.s2 = self.s2[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
-            self.s2_cloudy = self.s2_cloudy[:,crop0:crop0+delta_crop, crop0:crop0+delta_crop]
+            self.s1 = self.s1[:,self.crop0:self.crop0+self.delta_crop, self.crop0:self.crop0+self.delta_crop]
+            self.s2 = self.s2[:,self.crop0:self.crop0+self.delta_crop, self.crop0:self.crop0+self.delta_crop]
+            self.s2_cloudy = self.s2_cloudy[:,self.crop0:self.crop0+self.delta_crop, self.crop0:self.crop0+self.delta_crop]
 
-        ic(np.min(self.s2), np.average(self.s2), np.std(self.s2), np.max(self.s2))
+        # ic(np.min(self.s2), np.average(self.s2), np.std(self.s2), np.max(self.s2))
 
-        ic(np.min(self.s1[1]), np.average(self.s1[1]), np.max(self.s1[1]))
+        # ic(np.min(self.s1[1]), np.average(self.s1[1]), np.max(self.s1[1]))
 
         
         ##s2_copy = np.transpose(self.s2, (1, 2, 0))
@@ -196,7 +196,7 @@ class Image():
         ##plt.savefig('s2_rgb.png')
         #plt.show()
         #pdb.set_trace()     
-        
+        '''
         ic(np.min(self.s2[1]), np.average(self.s2[1]), np.max(self.s2[1]))
         ic(np.min(self.s2[2]), np.average(self.s2[2]), np.max(self.s2[2]))
         ic(np.min(self.s2[3]), np.average(self.s2[3]), np.max(self.s2[3]))
@@ -204,7 +204,7 @@ class Image():
         ic(np.min(self.s2_cloudy[1]), np.average(self.s2_cloudy[1]), np.max(self.s2_cloudy[1]))
         ic(np.min(self.s2_cloudy[2]), np.average(self.s2_cloudy[2]), np.max(self.s2_cloudy[2]))
         ic(np.min(self.s2_cloudy[3]), np.average(self.s2_cloudy[3]), np.max(self.s2_cloudy[3]))
-        
+        '''
         self.s1_unnormalized = self.s1.copy()
         self.s1 = self.get_normalized_data(self.s1, data_type = 1)
         self.s2_cloudy = self.get_normalized_data(self.s2_cloudy, data_type = 2)
@@ -414,3 +414,8 @@ class Image():
             rgb = np.dstack((np.zeros_like(HH), HH, HV))
 
             return rgb.astype(np.uint8)
+
+    def loadMask(self):
+        self.mask = np.load(self.root_path + 'tile_mask_0tr_1vl_2ts.npy')
+        if self.crop_sample_im == True:
+            self.mask = self.mask[self.crop0:self.crop0+self.delta_crop, self.crop0:self.crop0+self.delta_crop]
