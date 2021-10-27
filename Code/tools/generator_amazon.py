@@ -368,6 +368,7 @@ class DataGeneratorAmazon(keras.utils.Sequence):
         if self.include_target:
             output_opt_batch = self.get_batch(list_IDs_temp, augment_rotation_param_temp, augment_flip_param_temp,
                                               random_crop_paramx_temp, random_crop_paramy_temp, data_type=2)
+            '''
             print("=====*====")
             print(np.average(input_opt_batch), np.average(output_opt_batch))
             print(np.average(input_opt_batch[0]), np.average(output_opt_batch[0]))
@@ -380,6 +381,7 @@ class DataGeneratorAmazon(keras.utils.Sequence):
             #plt.figure()
             #plt.imshow(np.transpose(output_opt_batch[1:4], (1, 2, 0)))
             #plt.savefig('s2_patch.png')
+            '''
             
             if self.use_cloud_mask > 0:
                 output_opt_cloud_batch = [np.append(output_opt_batch[sample], cloud_mask_batch[sample], axis=0) for

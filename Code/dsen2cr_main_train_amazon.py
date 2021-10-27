@@ -382,17 +382,17 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(im_2018.s1.dtype, im_2018.s2.dtype, im_2018.s2_cloudy.dtype)
 
         im_2018.loadMask()
-        '''
+        
         date = '2019'
         crop_sample_im = False
-        im_2019 = Image(date = date, crop_sample_im = crop_sample_im)
+        im_2019 = Image(date = date, crop_sample_im = crop_sample_im, normalize = False)
         ic(np.min(im_2019.s1), np.min(im_2019.s2), np.min(im_2019.s2_cloudy))
         ic(np.average(im_2019.s1), np.average(im_2019.s2), np.average(im_2019.s2_cloudy))
         ic(np.max(im_2019.s1), np.max(im_2019.s2), np.max(im_2019.s2_cloudy))
         ic(np.std(im_2019.s1), np.std(im_2019.s2), np.std(im_2019.s2_cloudy))
 
         ic(im_2019.s1.dtype, im_2019.s2.dtype, im_2019.s2_cloudy.dtype)
-        '''
+        
         
         # pdb.set_trace()
         
@@ -416,7 +416,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(len(train_patches))
         ic(len(val_patches))
         ic(len(test_patches))
-        '''
+        
         train_patches_t1, val_patches_t1, test_patches_t1, \
         step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
                                                 im_2018.mask, augmentation_list, 
@@ -430,9 +430,9 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(len(train_patches))
         ic(len(val_patches))
         ic(len(test_patches))
-        '''
+        
         im_2018.addPadding(patch_size, patch_overlap_t0)
-        # im_2019.addPadding(patch_size, patch_overlap_t1)
+        im_2019.addPadding(patch_size, patch_overlap_t1)
         # pdb.set_trace()
         '''
         train_patches, val_patches, test_patches, \
@@ -441,7 +441,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
                                                 prefix = 1,
                                                 percent=patch_overlap)
         '''
-        im_2019 = im_2018
+        # im_2019 = im_2018
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TRAIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         ims = {'s1_2018': im_2018.s1, 
             's2_cloudy_2018': im_2018.s2_cloudy,
