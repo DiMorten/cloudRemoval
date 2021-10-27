@@ -12,6 +12,7 @@ from tools.image_metrics import metrics_get
 import matplotlib.pyplot as plt
 import tifffile as tiff
 import pathlib
+from tools.generator_amazon import DataGeneratorAmazon
 def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
                   shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
                   use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder, input_shape,
@@ -138,6 +139,141 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
                         use_multiprocessing=use_multi_processing,
                         max_queue_size=max_queue_size,
                         workers=workers)
+
+    # list all data in history
+#    print(history.history.keys())
+
+    # summarize history for loss
+    
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.savefig('loss_history.png')
+    
+    plt.figure()
+    plt.plot(history.history['cloud_mean_absolute_error'])
+    plt.plot(history.history['val_cloud_mean_absolute_error'])
+    plt.title('model MAE')
+    plt.ylabel('MAE')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.savefig('cloud_mean_absolute_error_history.png')
+
+    plt.figure()
+    plt.plot(history.history['cloud_psnr'])
+    plt.plot(history.history['val_cloud_psnr'])
+    plt.title('model psnr')
+    plt.ylabel('psnr')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.savefig('cloud_psnr_history.png')
+
+    pdb.set_trace()
+
+def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
+                  shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
+                  use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder, input_shape,
+                  max_queue_size, use_multi_processing, workers, remove_60m_bands, ims):
+    """Start or resume training of DSen2-CR model."""
+
+    print('Training model name: {}'.format(model_name))
+
+    out_path_train = make_dir(os.path.join(base_out_path, model_name, '/'))
+
+    # generate model information and metadata
+    plot_model(model, to_file=os.path.join(out_path_train, model_name + 'model.png'), show_shapes=True,
+               show_layer_names=True)
+    model_yaml = model.to_yaml()
+    with open(out_path_train + model_name + "model.yaml", 'w') as yaml_file:
+        yaml_file.write(model_yaml)
+    print("Model information files created at ", out_path_train)
+
+    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initialize callbacks %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    # instantiate model checkpoint callback
+    model_filepath = os.path.join(out_path_train, model_name + '_{epoch:02d}-{val_loss:.4f}' + '.hdf5')
+    checkpoint = ModelCheckpoint(model_filepath,
+                                 monitor='val_loss',
+                                 verbose=1,
+                                 save_best_only=False,
+                                 save_weights_only=False,
+                                 mode='auto')
+
+    # instantiate csv logging callback
+    es = EarlyStopping(monitor='loss', patience=3)
+
+    # define callbacks list
+    callbacks_list = [checkpoint, es]
+
+    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initialize training %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    params = {'input_dim': input_shape,
+              'batch_size': batch_size,
+              'shuffle': shuffle_train,
+              'scale': scale,
+              'include_target': True,
+              'data_augmentation': data_augmentation,
+              'random_crop': random_crop,
+              'crop_size': crop_size,
+              'clip_min': clip_min,
+              'clip_max': clip_max,
+              'input_data_folder': input_data_folder,
+              'use_cloud_mask': use_cloud_mask,
+              'max_val_sar': max_val_sar,
+              'cloud_threshold': cloud_threshold,
+              'remove_60m_bands': remove_60m_bands}
+    training_generator = DataGeneratorAmazon(train_filelist, ims['s1_2018'],
+                 ims['s2_cloudy_2018'],
+                 ims['s2_2018'],
+                 ims['s1_2019'],
+                 ims['s2_cloudy_2019'],
+                 ims['s2_2019'], **params)
+
+    params = {'input_dim': input_shape,
+              'batch_size': batch_size,
+              'shuffle': shuffle_train,
+              'scale': scale,
+              'include_target': True,
+              'data_augmentation': False,  # keep false
+              'random_crop': False,
+              'crop_size': crop_size,
+              'clip_min': clip_min,
+              'clip_max': clip_max,
+              'input_data_folder': input_data_folder,
+              'use_cloud_mask': use_cloud_mask,
+              'max_val_sar': max_val_sar,
+              'cloud_threshold': cloud_threshold,
+              'remove_60m_bands': remove_60m_bands
+              }
+
+    validation_generator = DataGeneratorAmazon(val_filelist, ims['s1_2018'],
+                 ims['s2_cloudy_2018'],
+                 ims['s2_2018'],
+                 ims['s1_2019'],
+                 ims['s2_cloudy_2019'],
+                 ims['s2_2019'], **params)
+
+    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Run training %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    print('Training starts...')
+
+    if resume_file is not None:
+        print("Will resume from the weights in file {}".format(resume_file))
+        #from keras.models import load_model
+        model.load_weights(resume_file)
+
+    history = model.fit_generator(generator=training_generator,
+                        validation_data=validation_generator,
+                        epochs=epochs_nr,
+                        verbose=1,
+                        callbacks=callbacks_list,
+                        shuffle=False,
+                        initial_epoch=initial_epoch) #
+#                        ,
+#                        use_multiprocessing=use_multi_processing,
+#                        max_queue_size=max_queue_size,
+#                        workers=workers)
 
     # list all data in history
 #    print(history.history.keys())

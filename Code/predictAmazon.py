@@ -98,8 +98,8 @@ class ImageReconstruction(object):
 
 class Image():
     def __init__(self, root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/",
-        date = '2018', crop_sample_im = False):
-
+        date = '2018', crop_sample_im = False, normalize = True):
+        self.normalize = normalize
         self.crop_sample_im = crop_sample_im
 
         print("creating ImageLoading object...")
@@ -177,6 +177,7 @@ class Image():
             self.s2 = self.s2[:,self.crop0:self.crop0+self.delta_crop, self.crop0:self.crop0+self.delta_crop]
             self.s2_cloudy = self.s2_cloudy[:,self.crop0:self.crop0+self.delta_crop, self.crop0:self.crop0+self.delta_crop]
 
+        _, self.rows, self.cols = self.s1.shape
         # ic(np.min(self.s2), np.average(self.s2), np.std(self.s2), np.max(self.s2))
 
         # ic(np.min(self.s1[1]), np.average(self.s1[1]), np.max(self.s1[1]))
@@ -205,10 +206,11 @@ class Image():
         ic(np.min(self.s2_cloudy[2]), np.average(self.s2_cloudy[2]), np.max(self.s2_cloudy[2]))
         ic(np.min(self.s2_cloudy[3]), np.average(self.s2_cloudy[3]), np.max(self.s2_cloudy[3]))
         '''
-        self.s1_unnormalized = self.s1.copy()
-        self.s1 = self.get_normalized_data(self.s1, data_type = 1)
-        self.s2_cloudy = self.get_normalized_data(self.s2_cloudy, data_type = 2)
-        self.s2 = self.get_normalized_data(self.s2, data_type = 2)
+        # self.s1_unnormalized = self.s1.copy()
+        if self.normalize == True:
+            self.s1 = self.get_normalized_data(self.s1, data_type = 1)
+            self.s2_cloudy = self.get_normalized_data(self.s2_cloudy, data_type = 2)
+            self.s2 = self.get_normalized_data(self.s2, data_type = 2)
 
         ic(np.min(self.s1[1]), np.average(self.s1[1]), np.max(self.s1[1]))
 
@@ -419,3 +421,26 @@ class Image():
         self.mask = np.load(self.root_path + 'tile_mask_0tr_1vl_2ts.npy')
         if self.crop_sample_im == True:
             self.mask = self.mask[self.crop0:self.crop0+self.delta_crop, self.crop0:self.crop0+self.delta_crop]
+
+    def addPadding(self, patch_size, overlap_percent):
+
+        #if self.padding == True:
+
+        # Percent of overlap between consecutive patches.
+
+        overlap = round(patch_size * overlap_percent)
+        overlap -= overlap % 2
+        stride = patch_size - overlap
+        # Add Padding to the image to match with the patch size
+        step_row = (stride - self.rows % stride) % stride
+        step_col = (stride - self.cols % stride) % stride
+        pad_tuple_msk = ( (overlap//2, overlap//2 + step_row), ((overlap//2, overlap//2 + step_col)) )
+        pad_tuple_im = ( (0,0), (overlap//2, overlap//2 + step_row), ((overlap//2, overlap//2 + step_col)) )
+        
+        self.s1 = np.pad(self.s1, pad_tuple_im, mode = 'symmetric')
+        self.s2 = np.pad(self.s2, pad_tuple_im, mode = 'symmetric')
+        self.s2_cloudy = np.pad(self.s2_cloudy, pad_tuple_im, mode = 'symmetric')
+        try:
+            self.mask = np.pad(self.mask, pad_tuple_msk, mode = 'symmetric')
+        except:
+            print("No mask")

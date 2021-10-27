@@ -154,7 +154,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
                                        num_layers=num_layers,
                                        feature_size=feature_size,
                                        use_cloud_mask=use_cloud_mask,
-                                       include_sar_input=include_sar_input)
+                                       include_sar_input=include_sar_input,
+                                       batch_size = batch_size)
     else:
         # handle multiple gpus
         with tf.device('/cpu:0'):
@@ -163,7 +164,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
                                                   num_layers=num_layers,
                                                   feature_size=feature_size,
                                                   use_cloud_mask=use_cloud_mask,
-                                                  include_sar_input=include_sar_input)
+                                                  include_sar_input=include_sar_input,
+                                                  batch_size = batch_size)
 
         model = multi_gpu_model(single_model, gpus=n_gpus)
 
@@ -371,7 +373,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     else:
         date = '2018'
         crop_sample_im = False
-        im_2018 = Image(date = date, crop_sample_im = crop_sample_im)
+        im_2018 = Image(date = date, crop_sample_im = crop_sample_im, normalize = False)
         ic(np.min(im_2018.s1), np.min(im_2018.s2), np.min(im_2018.s2_cloudy))
         ic(np.average(im_2018.s1), np.average(im_2018.s2), np.average(im_2018.s2_cloudy))
         ic(np.max(im_2018.s1), np.max(im_2018.s2), np.max(im_2018.s2_cloudy))
@@ -390,9 +392,10 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(np.std(im_2019.s1), np.std(im_2019.s2), np.std(im_2019.s2_cloudy))
 
         ic(im_2019.s1.dtype, im_2019.s2.dtype, im_2019.s2_cloudy.dtype)
-
-        # pdb.set_trace()
         '''
+        
+        # pdb.set_trace()
+        
 
         augmentation_list = [0]
         rows, cols = im_2018.s2.shape[1:3]
@@ -400,19 +403,37 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(im_2018.s2.shape)
         patch_size = crop_size
 #        patch_overlap = 0.7
-        patch_overlap = 0.3
+        patch_overlap_t0 = 0.1
 
         train_patches, val_patches, test_patches, \
         step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
                                                 im_2018.mask, augmentation_list, 
                                                 prefix = 0,
-                                                percent=patch_overlap)
+                                                percent=patch_overlap_t0)
+
+        patch_overlap_t1 = 0.1
 
         ic(len(train_patches))
         ic(len(val_patches))
         ic(len(test_patches))
+        '''
+        train_patches_t1, val_patches_t1, test_patches_t1, \
+        step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
+                                                im_2018.mask, augmentation_list, 
+                                                prefix = 1,
+                                                percent=patch_overlap_t1)
+
+        train_patches = train_patches + train_patches_t1
+        val_patches = val_patches + val_patches_t1
+        test_patches = test_patches + test_patches_t1
         
-        pdb.set_trace()
+        ic(len(train_patches))
+        ic(len(val_patches))
+        ic(len(test_patches))
+        '''
+        im_2018.addPadding(patch_size, patch_overlap_t0)
+        # im_2019.addPadding(patch_size, patch_overlap_t1)
+        # pdb.set_trace()
         '''
         train_patches, val_patches, test_patches, \
         step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
@@ -420,13 +441,19 @@ def run_dsen2cr(predict_file=None, resume_file=None):
                                                 prefix = 1,
                                                 percent=patch_overlap)
         '''
-
+        im_2019 = im_2018
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TRAIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-        train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
+        ims = {'s1_2018': im_2018.s1, 
+            's2_cloudy_2018': im_2018.s2_cloudy,
+            's2_2018': im_2018.s2,
+            's1_2019': im_2019.s1, 
+            's2_cloudy_2019': im_2019.s2_cloudy,
+            's2_2019': im_2019.s2
+            }
+        train_dsen2cr(model, model_name, base_out_path, resume_file, train_patches, val_patches, lr, log_step_freq,
                       shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
                       use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder,
-                      input_shape, max_queue_size, use_multi_processing, workers)
+                      input_shape, max_queue_size, use_multi_processing, workers, remove_60m_bands, ims)
 
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MAIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
