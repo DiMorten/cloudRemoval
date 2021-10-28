@@ -513,11 +513,11 @@ class DataGeneratorAmazon(keras.utils.Sequence):
             dim = self.input_dim[0]
 
         if data_type == 1:
-            im = [self.s1_2018, self.s1_2018] 
+            im = [self.s1_2018, self.s1_2019] 
         elif data_type == 2:
-            im = [self.s2_2018, self.s2_2018]
+            im = [self.s2_2018, self.s2_2019]
         elif data_type == 3:
-            im = [self.s2_cloudy_2018, self.s2_cloudy_2018]
+            im = [self.s2_cloudy_2018, self.s2_cloudy_2019]
 
         batch = np.empty((self.batch_size, *dim)).astype('float32')
         ##ic(batch.shape)

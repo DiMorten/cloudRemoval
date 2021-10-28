@@ -222,7 +222,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         
         # load the model weights at checkpoint
         model.load_weights(predict_file)
-        date = '2018'
+        date = '2019'
         crop_sample_im = False
         im = Image(date = date, crop_sample_im = crop_sample_im)
         ic(np.min(im.s1), np.min(im.s2), np.min(im.s2_cloudy))
