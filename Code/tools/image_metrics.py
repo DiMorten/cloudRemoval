@@ -24,9 +24,9 @@ def metrics_get(y_true, y_pred):
         cloud_root_mean_squared_error,
         cloud_psnr,
         sam)#,
-    ssim = SSIM_large_image(y_true * 2000, y_pred * 2000)
+    # ssim = SSIM_large_image(y_true * 2000, y_pred * 2000)
 
-    ic(ssim)
+    # ic(ssim)
 
 
 def np_cloud_mean_absolute_error(y_true, y_pred):

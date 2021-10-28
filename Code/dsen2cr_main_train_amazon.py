@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 import tools.image_metrics as img_met
 from dsen2cr_network import DSen2CR_model
-from dsen2cr_tools import train_dsen2cr, predict_dsen2cr
+from dsen2cr_tools import train_dsen2cr_amazon, predict_dsen2cr
 from keras.optimizers import Nadam
 from keras.utils import multi_gpu_model
 from tools.dataIO import get_train_val_test_filelists
@@ -382,7 +382,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(im_2018.s1.dtype, im_2018.s2.dtype, im_2018.s2_cloudy.dtype)
 
         im_2018.loadMask()
-        
+        '''
         date = '2019'
         crop_sample_im = False
         im_2019 = Image(date = date, crop_sample_im = crop_sample_im, normalize = False)
@@ -392,7 +392,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(np.std(im_2019.s1), np.std(im_2019.s2), np.std(im_2019.s2_cloudy))
 
         ic(im_2019.s1.dtype, im_2019.s2.dtype, im_2019.s2_cloudy.dtype)
-        
+        '''
         
         # pdb.set_trace()
         
@@ -412,11 +412,11 @@ def run_dsen2cr(predict_file=None, resume_file=None):
                                                 percent=patch_overlap_t0)
 
         patch_overlap_t1 = 0.1
-
+        
         ic(len(train_patches))
         ic(len(val_patches))
         ic(len(test_patches))
-        
+        '''
         train_patches_t1, val_patches_t1, test_patches_t1, \
         step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
                                                 im_2018.mask, augmentation_list, 
@@ -430,9 +430,9 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(len(train_patches))
         ic(len(val_patches))
         ic(len(test_patches))
-        
+        '''
         im_2018.addPadding(patch_size, patch_overlap_t0)
-        im_2019.addPadding(patch_size, patch_overlap_t1)
+        # im_2019.addPadding(patch_size, patch_overlap_t1)
         # pdb.set_trace()
         '''
         train_patches, val_patches, test_patches, \
@@ -441,7 +441,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
                                                 prefix = 1,
                                                 percent=patch_overlap)
         '''
-        # im_2019 = im_2018
+        im_2019 = im_2018
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TRAIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         ims = {'s1_2018': im_2018.s1, 
             's2_cloudy_2018': im_2018.s2_cloudy,
@@ -450,7 +450,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
             's2_cloudy_2019': im_2019.s2_cloudy,
             's2_2019': im_2019.s2
             }
-        train_dsen2cr(model, model_name, base_out_path, resume_file, train_patches, val_patches, lr, log_step_freq,
+        train_dsen2cr_amazon(model, model_name, base_out_path, resume_file, train_patches, val_patches, lr, log_step_freq,
                       shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
                       use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder,
                       input_shape, max_queue_size, use_multi_processing, workers, remove_60m_bands, ims)

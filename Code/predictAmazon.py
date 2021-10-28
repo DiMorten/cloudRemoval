@@ -317,7 +317,9 @@ class Image():
 
         self.generate_output_images(s1, s2, s2_cloudy, predicted * self.scale)
 
-    def generate_output_images(self, s1, s2, s2_cloudy, predicted):
+
+    def generate_output_images(self, s1, s2, s2_cloudy, predicted, 
+        predicted_images_path = 'sample_ims', scene_name = '2018'):
 
         sar_preview = self.get_preview(s1, True, [1, 2, 2], sar_composite=True)
 
@@ -330,8 +332,8 @@ class Image():
 
         ic(np.min(predicted_preview), np.average(predicted_preview), np.max(predicted_preview))
 
-        predicted_images_path = 'sample_ims'
-        scene_name = '2018'
+        #predicted_images_path = 'sample_ims'
+        #scene_name = '2018'
         out_path = make_dir(os.path.join(predicted_images_path, scene_name))
 
         self.save_single_images(sar_preview, cloudy_preview, cloudFree_preview, 

@@ -360,6 +360,13 @@ class DataGenerator(keras.utils.Sequence):
         if self.include_target:
             output_opt_batch = self.get_batch(list_IDs_temp, augment_rotation_param_temp, augment_flip_param_temp,
                                               random_crop_paramx_temp, random_crop_paramy_temp, data_type=2)
+            # print("========")
+            # print("hi",np.min(input_sar_batch), 
+            #     np.average(input_sar_batch), 
+            #     np.std(input_sar_batch), 
+            #     np.max(input_sar_batch))
+            # print("========")
+
             if self.use_cloud_mask > 0:
                 output_opt_cloud_batch = [np.append(output_opt_batch[sample], cloud_mask_batch[sample], axis=0) for
                                           sample in range(len(output_opt_batch))]
@@ -449,12 +456,13 @@ class DataGenerator(keras.utils.Sequence):
                 data_image[channel] -= self.clip_min[data_type - 1][channel]
                 data_image[channel] = self.max_val * (data_image[channel] / (
                         self.clip_max[data_type - 1][channel] - self.clip_min[data_type - 1][channel]))
-            ic(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
+            print("S1")
+            print(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
 
             if shift_data:
                 data_image -= self.max_val / 2
-            ic(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
-
+            print(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
+            
         # OPT
         elif data_type == 2 or data_type == 3:
             for channel in range(len(data_image)):

@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import tifffile as tiff
 import pathlib
 from tools.generator_amazon import DataGeneratorAmazon
+from tools.monitor import Monitor
 def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
                   shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
                   use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder, input_shape,
@@ -79,9 +80,6 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
                                      learning_phase=False)
     es = EarlyStopping(monitor='loss', patience=3)
 
-    # define callbacks list
-    callbacks_list = [checkpoint, csv_logger, batch_logger, csv_batch_logger, tensorboard]
-    callbacks_list = [checkpoint, es]
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initialize training %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     params = {'input_dim': input_shape,
@@ -119,6 +117,13 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
               }
 
     validation_generator = DataGenerator(val_filelist, **params)
+
+
+    monitor = Monitor(validation_generator)
+    # define callbacks list
+    callbacks_list = [checkpoint, csv_logger, batch_logger, csv_batch_logger, tensorboard]
+    callbacks_list = [checkpoint, es, monitor]
+    #callbacks_list = [checkpoint, es]
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Run training %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -173,7 +178,7 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
 
     pdb.set_trace()
 
-def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
+def train_dsen2cr_amazon(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
                   shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
                   use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder, input_shape,
                   max_queue_size, use_multi_processing, workers, remove_60m_bands, ims):
@@ -205,7 +210,6 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
     es = EarlyStopping(monitor='loss', patience=3)
 
     # define callbacks list
-    callbacks_list = [checkpoint, es]
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initialize training %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     params = {'input_dim': input_shape,
@@ -253,6 +257,11 @@ def train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist,
                  ims['s1_2019'],
                  ims['s2_cloudy_2019'],
                  ims['s2_2019'], **params)
+    
+    monitor = Monitor(validation_generator)
+
+    callbacks_list = [checkpoint, es, monitor]
+#    callbacks_list = [checkpoint, es]
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Run training %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

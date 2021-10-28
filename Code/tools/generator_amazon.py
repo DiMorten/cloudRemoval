@@ -104,7 +104,7 @@ def get_rgb_preview(r, g, b, sar_composite=False):
         #ic(np.min(HH), np.average(HH), np.std(HH),np.max(HH))
 
         rgb = np.dstack((np.zeros_like(HH), HH, HV))
-        pdb.set_trace()
+        #pdb.set_trace()
         return rgb.astype(np.uint8)
 
 
@@ -136,43 +136,34 @@ def get_preview(file, predicted_file, bands, brighten_limit=None, sar_composite=
         b = np.clip(b, 0, brighten_limit)
         return get_rgb_preview(r, g, b, sar_composite)
 
+def saveSampleIms(self, s1, s2, s2_cloudy, predicted):
+    # predicted *= self.scale
 
-def generate_output_images(predicted, ID, predicted_images_path, 
-    input_data_folder, cloud_threshold, remove_60m_bands):
-    scene_name, filepath_sar, filepath_cloudFree, filepath_cloudy = get_info_quartet(ID,
-                                                                                     predicted_images_path,
-                                                                                     input_data_folder)
+    generate_output_images(s1, s2, s2_cloudy, predicted * 2000)
 
-    ##ic(ID, filepath_sar, filepath_cloudFree)
+def generate_output_images( s1, s2, s2_cloudy, predicted, 
+    predicted_images_path = 'sample_ims', scene_name = '2018'):
 
-    print("Generating quartet for ", scene_name)
+    sar_preview = get_preview(s1, True, [1, 2, 2], sar_composite=False)
 
-    sar_preview = get_preview(filepath_sar, False, [1, 2, 2], sar_composite=True)
-    if remove_60m_bands == False:
-        opt_bands = [4, 3, 2]  # R, G, B bands (S2 channel numbers)
-    else:
-        opt_bands = [3, 2, 1]  # R, G, B bands (S2 channel numbers)
+    opt_bands = [4, 3, 2]  # R, G, B bands (S2 channel numbers)
 
-    cloudFree_preview = get_preview(filepath_cloudFree, False, opt_bands, brighten_limit=2000)
-    cloudy_preview = get_preview(filepath_cloudy, False, opt_bands)
-    cloudy_preview_brightened = get_preview(filepath_cloudy, False, opt_bands, brighten_limit=2000)
-
+    cloudFree_preview = get_preview(s2, True, opt_bands, brighten_limit=2000)
+    cloudy_preview = get_preview(s2_cloudy, True, opt_bands)
+    
     predicted_preview = get_preview(predicted, True, opt_bands, 2000)
 
-    ##ic(predicted.shape, filepath_cloudFree)
-    ##ic(np.min(predicted_preview), np.average(predicted_preview), np.max(predicted_preview))
-    ##ic(np.min(cloudFree_preview), np.average(cloudFree_preview), np.max(cloudFree_preview))
-    
-    ##ic(np.average(cloudFree_preview[-30:-1, -30:-1]), 
-    ##    np.average(predicted_preview[-30:-1, -30:-1]),
-    ##    np.average(cloudy_preview[-30:-1, -30:-1]))
-    cloud_mask = get_cloud_cloudshadow_mask(get_raw_data(filepath_cloudy), cloud_threshold)
-    save_single_images(sar_preview, cloudy_preview, cloudFree_preview, predicted_preview, cloudy_preview_brightened,
-                       cloud_mask, predicted_images_path, scene_name)
-##    pdb.set_trace()
+    # ic(np.min(predicted_preview), np.average(predicted_preview), np.max(predicted_preview))
+
+    #predicted_images_path = 'sample_ims'
+    #scene_name = '2018'
+    out_path = make_dir(os.path.join(predicted_images_path, scene_name))
+
+    save_single_images(sar_preview, cloudy_preview, cloudFree_preview, 
+        predicted_preview, out_path)
+
     return
-
-
+    
 def save_single_image(image, out_path, name):
     plt.figure(frameon=False)
     plt.imshow(image)
@@ -208,9 +199,12 @@ def save_single_cloudmap(image, out_path, name):
     return
 
 
-def save_single_images(sar_preview, cloudy_preview, cloudFree_preview, predicted_preview, cloudy_preview_brightened,
-                       cloud_mask, predicted_images_path, scene_name):
-    out_path = make_dir(os.path.join(predicted_images_path, scene_name))
+def save_single_images(sar_preview, cloudy_preview, cloudFree_preview, predicted_preview, 
+    out_path):
+
+#, cloudy_preview_brightened,
+#                       cloud_mask, predicted_images_path, scene_name):
+#    out_path = make_dir(os.path.join(predicted_images_path, scene_name))
 
     ##ic(predicted_preview.shape, cloudFree_preview.shape)
 #    pdb.set_trace()
@@ -218,8 +212,8 @@ def save_single_images(sar_preview, cloudy_preview, cloudFree_preview, predicted
     save_single_image(cloudy_preview, out_path, "input")
     save_single_image(cloudFree_preview, out_path, "inputtarg")
     save_single_image(predicted_preview, out_path, "inputpred")
-    save_single_image(cloudy_preview_brightened, out_path, "inputbr")
-    save_single_cloudmap(cloud_mask, out_path, "cloudmask")
+#    save_single_image(cloudy_preview_brightened, out_path, "inputbr")
+#    save_single_cloudmap(cloud_mask, out_path, "cloudmask")
 
     return
 
@@ -368,14 +362,28 @@ class DataGeneratorAmazon(keras.utils.Sequence):
         if self.include_target:
             output_opt_batch = self.get_batch(list_IDs_temp, augment_rotation_param_temp, augment_flip_param_temp,
                                               random_crop_paramx_temp, random_crop_paramy_temp, data_type=2)
+            # print("========")
+            # print("hi",np.min(input_sar_batch), 
+            #     np.average(input_sar_batch), 
+            #     np.std(input_sar_batch), 
+            #     np.max(input_sar_batch))
+            # print("========")
+
+            
+            # print(np.average(input_opt_batch), np.average(output_opt_batch))
+            # print(np.average(input_opt_batch[0]), np.average(output_opt_batch[0]))
+            # print(np.average(input_opt_batch[1]), np.average(output_opt_batch[1]))
+            # np.save('output_opt_batch.npy', output_opt_batch)
+            # np.save('input_opt_batch.npy', input_opt_batch)
+            # generate_output_images(input_sar_batch[0], output_opt_batch[0], input_opt_batch[0], output_opt_batch[0])
+
             '''
             print("=====*====")
             print(np.average(input_opt_batch), np.average(output_opt_batch))
             print(np.average(input_opt_batch[0]), np.average(output_opt_batch[0]))
             print(np.average(input_opt_batch[1]), np.average(output_opt_batch[1]))
             
-            #np.save('output_opt_batch.npy', output_opt_batch)
-            #np.save('input_opt_batch.npy', input_opt_batch)
+            
             print("=====*====")
             pdb.set_trace()
             #plt.figure()
@@ -391,6 +399,8 @@ class DataGeneratorAmazon(keras.utils.Sequence):
                 #ic(input_opt_batch.shape, input_sar_batch.shape, output_opt_cloud_batch.shape)
                 #ic(output_opt_batch.shape)
                 #pdb.set_trace()
+                # print("s2_cloudy generator",np.average(input_opt_batch))
+                # print("s2_cloudy generator2",np.average(self.s2_cloudy_2018))
 
                 return ([input_opt_batch, input_sar_batch], [output_opt_cloud_batch])
             else:
@@ -465,6 +475,8 @@ class DataGeneratorAmazon(keras.utils.Sequence):
 
         # SAR
         if data_type == 1:
+            #print(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
+
             #ic(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
             for channel in range(len(data_image)):
                 data_image[channel] = np.clip(data_image[channel], self.clip_min[data_type - 1][channel],
@@ -472,12 +484,13 @@ class DataGeneratorAmazon(keras.utils.Sequence):
                 data_image[channel] -= self.clip_min[data_type - 1][channel]
                 data_image[channel] = self.max_val * (data_image[channel] / (
                         self.clip_max[data_type - 1][channel] - self.clip_min[data_type - 1][channel]))
-            #ic(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
+            #print("S1")
+            #print(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
 
             if shift_data:
                 data_image -= self.max_val / 2
             #
-            # ic(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
+            #print(np.min(data_image[0]), np.average(data_image[0]), np.std(data_image[0]), np.max(data_image[0]))
 
         # OPT
         elif data_type == 2 or data_type == 3:
@@ -500,9 +513,9 @@ class DataGeneratorAmazon(keras.utils.Sequence):
             dim = self.input_dim[0]
 
         if data_type == 1:
-            im = [self.s1_2018, self.s1_2019] 
+            im = [self.s1_2018, self.s1_2018] 
         elif data_type == 2:
-            im = [self.s2_2018, self.s2_2019]
+            im = [self.s2_2018, self.s2_2018]
         elif data_type == 3:
             im = [self.s2_cloudy_2018, self.s2_cloudy_2018]
 
@@ -512,9 +525,12 @@ class DataGeneratorAmazon(keras.utils.Sequence):
         #ic(list_IDs_temp)
         for i, ID in enumerate(list_IDs_temp):
             # print("ID", ID)
+            # if data_type == 3:
+            #     print("Before slice", np.shape(im), np.average(im), np.average(self.s2_cloudy_2018))
             data_image = im[ID[0]][:,ID[1]:ID[1]+self.crop_size,
-                          ID[2]:ID[2]+self.crop_size]
-
+                          ID[2]:ID[2]+self.crop_size].copy()
+            # if data_type == 3:
+            #     print("After slice", np.shape(data_image), np.average(data_image))
             '''
             if data_type == 3:
                 print("=====")
@@ -575,8 +591,10 @@ class DataGeneratorAmazon(keras.utils.Sequence):
                     data_image = data_image[np.r_[1:9,11:13]]
                     #ic(data_image.shape)
                     #pdb.set_trace()
-            
+
             data_image = self.get_normalized_data(data_image, data_type)
+            # if data_type == 3:
+            #     print("After norm", np.shape(data_image), np.average(data_image))
 
             batch[i,] = data_image
 
