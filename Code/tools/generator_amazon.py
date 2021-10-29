@@ -358,10 +358,13 @@ class DataGeneratorAmazon(keras.utils.Sequence):
         #plt.figure()
         #plt.imshow(np.transpose(input_opt_batch[1:4], (1, 2, 0)))
         #plt.savefig('s2_cloudy_patch.png')
-        #pdb.set_trace()
+        #pdb.set_trace()    
+        # print("1", input_opt_batch.shape, input_sar_batch.shape)
         if self.include_target:
             output_opt_batch = self.get_batch(list_IDs_temp, augment_rotation_param_temp, augment_flip_param_temp,
                                               random_crop_paramx_temp, random_crop_paramy_temp, data_type=2)
+            # print("2", input_opt_batch.shape, input_sar_batch.shape, output_opt_batch.shape)
+            
             # print("========")
             # print("hi",np.min(input_sar_batch), 
             #     np.average(input_sar_batch), 

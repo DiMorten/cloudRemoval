@@ -32,7 +32,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     # TODO implement external hyperparam config file
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Setup model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    remove_60m_bands = False
+    remove_60m_bands = True
 
     model_name = 'DSen2-CR_001'  # model name for training
     if remove_60m_bands == True: 
@@ -233,9 +233,9 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
 
 #        root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018"
-        save_id = 'predictions_scratch'
+        #save_id = 'predictions_scratch'
         #save_id = 'predictions_pretrained'
-        #save_id = 'predictions_remove60m'
+        save_id = 'predictions_remove60m'
         
         
         imReconstruction = ImageReconstruction(model, output_c_dim = bands, 
@@ -256,6 +256,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
             np.save(save_id+date+'.npy', predictions)
             if save_unnormalized == True:
                 np.save(save_id+'_unnorm_' + date+'.npy', predictions*2000)
+            #pdb.set_trace()
 
         else:
             predictions = np.load(save_id+date+'.npy').astype(np.float32)

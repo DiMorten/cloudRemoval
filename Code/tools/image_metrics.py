@@ -6,7 +6,7 @@ ic.enable()
 from skimage.metrics import structural_similarity
 import numpy as np
 
-remove_60m_bands = False
+remove_60m_bands = True
 if remove_60m_bands == False:
     s2_bands = 13
 else:

@@ -260,8 +260,8 @@ def train_dsen2cr_amazon(model, model_name, base_out_path, resume_file, train_fi
     
     monitor = Monitor(validation_generator)
 
-    callbacks_list = [checkpoint, es, monitor]
-#    callbacks_list = [checkpoint, es]
+#    callbacks_list = [checkpoint, es, monitor]
+    callbacks_list = [checkpoint, es]
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Run training %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
