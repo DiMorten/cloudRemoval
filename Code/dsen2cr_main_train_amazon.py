@@ -32,7 +32,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     # TODO implement external hyperparam config file
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Setup model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    remove_60m_bands = True
+    remove_60m_bands = False
 
     model_name = 'DSen2-CR_001'  # model name for training
     if remove_60m_bands == True: 
@@ -87,7 +87,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     # training parameters
     initial_epoch = 0  # start at epoch number
     #epochs_nr = 8  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
-    epochs_nr = 50  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
+    epochs_nr = 60  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
     
     if predict_file !=None:    
         batch_size = 1  # training batch size to distribute over GPUs
@@ -238,9 +238,9 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
 
 #        root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018"
-        #save_id = 'predictions_scratch'
+        save_id = 'predictions_scratch'
         #save_id = 'predictions_pretrained'
-        save_id = 'predictions_remove60m'
+        #save_id = 'predictions_remove60m'
         
         
         imReconstruction = ImageReconstruction(model, output_c_dim = bands, 

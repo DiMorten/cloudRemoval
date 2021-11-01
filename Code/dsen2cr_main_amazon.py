@@ -19,7 +19,7 @@ K.set_image_data_format('channels_first')
 import pickle
 from predictAmazon import Image, ImageReconstruction
 ic.configureOutput(includeContext=True)
-from tools.image_metrics import metrics_get
+from tools.image_metrics import metrics_get, metrics_get_mask
 import cv2
 import matplotlib.pyplot as plt 
 import tifffile as tiff
@@ -222,20 +222,23 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         
         # load the model weights at checkpoint
         model.load_weights(predict_file)
-        date = '2019'
+        date = '2018'
         crop_sample_im = False
         im = Image(date = date, crop_sample_im = crop_sample_im)
+        im.loadMask()
+
         ic(np.min(im.s1), np.min(im.s2), np.min(im.s2_cloudy))
         ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy))
         ic(np.max(im.s1), np.max(im.s2), np.max(im.s2_cloudy))
         ic(np.std(im.s1), np.std(im.s2), np.std(im.s2_cloudy))
 
         ic(im.s1.dtype, im.s2.dtype, im.s2_cloudy.dtype)
-
+        ic(im.mask.shape, im.s2.shape)
+        # pdb.set_trace()
 #        root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018"
-        #save_id = 'predictions_scratch'
+        save_id = 'predictions_scratch'
         #save_id = 'predictions_pretrained'
-        save_id = 'predictions_remove60m'
+        #save_id = 'predictions_remove60m'
         
         
         imReconstruction = ImageReconstruction(model, output_c_dim = bands, 
@@ -274,6 +277,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
                 metrics_get(im.s2[np.r_[1:9,11:13]], predictions)
             else:
                 metrics_get(im.s2, predictions)
+                metrics_get_mask(im.s2[...,:-3], predictions[...,:-3], im.mask)
 
             #except Exception:
             #    print(traceback.format_exc())

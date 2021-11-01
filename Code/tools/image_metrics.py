@@ -27,7 +27,18 @@ def metrics_get(y_true, y_pred):
     # ssim = SSIM_large_image(y_true * 2000, y_pred * 2000)
 
     # ic(ssim)
+def metrics_get_mask(y_true, y_pred, mask):
+    y_true = np.reshape(y_true, (y_true.shape[0], -1))
+    y_pred = np.reshape(y_pred, (y_pred.shape[0], -1))
+    mask = mask.flatten()
+    ic(y_true.shape, y_pred.shape, mask.shape)
 
+    y_true = y_true[:, mask == 2]
+    y_pred = y_pred[:, mask == 2]
+
+    ic(y_true.shape, y_pred.shape)
+
+    metrics_get(y_true, y_pred)
 
 def np_cloud_mean_absolute_error(y_true, y_pred):
     """Computes the MAE over the full image."""

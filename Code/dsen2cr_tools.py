@@ -207,7 +207,7 @@ def train_dsen2cr_amazon(model, model_name, base_out_path, resume_file, train_fi
                                  mode='auto')
 
     # instantiate csv logging callback
-    es = EarlyStopping(monitor='loss', patience=3)
+    es = EarlyStopping(monitor='loss', patience=10)
 
     # define callbacks list
 

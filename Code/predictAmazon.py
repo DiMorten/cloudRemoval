@@ -118,7 +118,7 @@ class Image():
         self.scale = scale
         self.date = date
         #imOptical = self.loadImage(root_path + "")
-        loadIms=True
+        loadIms=False
         if loadIms == False:
             print("Loading sar..")
             self.s1 = self.loadSar()
