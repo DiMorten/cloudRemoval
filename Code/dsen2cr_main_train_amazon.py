@@ -17,7 +17,7 @@ import pdb
 K.set_image_data_format('channels_first')
 
 import pickle
-from predictAmazon import Image, ImageReconstruction
+from predictAmazon import Image, ImageReconstruction, ImagePA, ImageMG
 ic.configureOutput(includeContext=True)
 from tools.image_metrics import metrics_get
 import cv2
@@ -34,12 +34,19 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 
     remove_60m_bands = False
 
-    model_name = 'DSen2-CR_001'  # model name for training
     if remove_60m_bands == True: 
         model_name = model_name + "_less60m"
         bands = 10
     else:
         bands = 13
+
+    site = 'MG'
+    imageObj = ImagePA if site == 'PA' else ImageMG
+    dates = ['2018', '2019'] if site == 'PA' else ['2019', '2020']
+
+    model_name = 'DSen2-CR_001_' + site  # model name for training
+
+    ic(site, imageObj, dates, model_name)
 
     # model parameters
     num_layers = 16  # B value in paper
@@ -227,9 +234,18 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         
         # load the model weights at checkpoint
         model.load_weights(predict_file)
-        date = '2018'
+
+
+
+        change_time = 'T0'
         crop_sample_im = False
-        im = Image(date = date, crop_sample_im = crop_sample_im)
+        date = dates[0] if change_time == 'T0' else dates[1]
+
+        im = imageObj(date = date, crop_sample_im = crop_sample_im)    
+
+
+
+
         ic(np.min(im.s1), np.min(im.s2), np.min(im.s2_cloudy))
         ic(np.average(im.s1), np.average(im.s2), np.average(im.s2_cloudy))
         ic(np.max(im.s1), np.max(im.s2), np.max(im.s2_cloudy))
@@ -373,9 +389,19 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         
 
     else:
-        date = '2018'
+        loadIms = True
         crop_sample_im = False
-        im_2018 = Image(date = date, crop_sample_im = crop_sample_im, normalize = False)
+        ### just once
+        # date = dates[1]
+        # crop_sample_im = False
+        # im_2019 = imageObj(date = date, crop_sample_im = crop_sample_im, 
+        #     normalize = False, site = site, loadIms = loadIms)
+        # pdb.set_trace()
+        ### just once
+        date = dates[0]
+        
+        im_2018 = imageObj(date = date, crop_sample_im = crop_sample_im, 
+            normalize = False, site = site, loadIms = loadIms)
         ic(np.min(im_2018.s1), np.min(im_2018.s2), np.min(im_2018.s2_cloudy))
         ic(np.average(im_2018.s1), np.average(im_2018.s2), np.average(im_2018.s2_cloudy))
         ic(np.max(im_2018.s1), np.max(im_2018.s2), np.max(im_2018.s2_cloudy))
@@ -385,9 +411,10 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 
         im_2018.loadMask()
         
-        date = '2019'
+        date = dates[1]
         crop_sample_im = False
-        im_2019 = Image(date = date, crop_sample_im = crop_sample_im, normalize = False)
+        im_2019 = imageObj(date = date, crop_sample_im = crop_sample_im, 
+            normalize = False, site = site, loadIms = loadIms)
         ic(np.min(im_2019.s1), np.min(im_2019.s2), np.min(im_2019.s2_cloudy))
         ic(np.average(im_2019.s1), np.average(im_2019.s2), np.average(im_2019.s2_cloudy))
         ic(np.max(im_2019.s1), np.max(im_2019.s2), np.max(im_2019.s2_cloudy))

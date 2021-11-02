@@ -32,12 +32,14 @@ def make_dir(dir_path):
 
 class ImageReconstruction(object):
 
-    def __init__ (self, model, output_c_dim, patch_size=256, overlap_percent=0):
+    def __init__ (self, model, output_c_dim, patch_size=256, overlap_percent=0,
+        loadIms = False):
 
         self.patch_size = patch_size
         self.overlap_percent = overlap_percent
         self.output_c_dim = output_c_dim
         self.model = model
+        self.loadIms = loadIms
     
     def infer(self, s2, s1):
         
@@ -97,14 +99,16 @@ class ImageReconstruction(object):
         return probs
 
 class Image():
-    def __init__(self, root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/",
-        date = '2018', crop_sample_im = False, normalize = True):
+    def __init__(self,
+        date = '2018', crop_sample_im = False, normalize = True, site = 'PA', loadIms = False):
+        self.site = site # PA,MG
+        self.loadIms = loadIms
+
         self.normalize = normalize
         self.crop_sample_im = crop_sample_im
 
         print("creating ImageLoading object...")
 
-        self.root_path = root_path
 
         scale = 2000
         max_val_sar = 2
@@ -118,50 +122,25 @@ class Image():
         self.scale = scale
         self.date = date
         #imOptical = self.loadImage(root_path + "")
-        loadIms=False
-        if loadIms == False:
+        #self.loadIms=False
+        if self.loadIms == False:
             print("Loading sar..")
             self.s1 = self.loadSar()
             print("Loading optical..")
-            np.save('s1_'+self.date+'.npy', self.s1)
+            np.save('s1_'+self.date+'_'+self.site+'.npy', self.s1)
 
-            if self.date == '2018':
-                path_list_s2 = ['Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif',
-                    'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B4_B5_B6.tif',
-                    'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B7_B8_B8A.tif',
-                    'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B9_B10_B11.tif',
-                    'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B12.tif']
-            else:
-                path_list_s2 = ['Sentinel2_2019/COPERNICUS_S2_20190721_20190726_B1_B2_B3.tif',
-                    'Sentinel2_2019/COPERNICUS_S2_20190721_20190726_B4_B5_B6.tif',
-                    'Sentinel2_2019/COPERNICUS_S2_20190721_20190726_B7_B8_B8A.tif',
-                    'Sentinel2_2019/COPERNICUS_S2_20190721_20190726_B9_B10_B11.tif',
-                    'Sentinel2_2019/COPERNICUS_S2_20190721_20190726_B12.tif']
 
             print("Loading sentinel-2...")
-            self.s2 = self.loadOptical(path_list_s2)
-            np.save('s2_'+self.date+'.npy', self.s2)
-
-            if self.date == '2018':
-                path_list_s2_cloudy = ['Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B1_B2_B3.tif',
-                    'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B4_B5_B6.tif',
-                    'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B7_B8_B8A.tif',
-                    'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B9_B10_B11.tif',
-                    'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B12.tif']
-            else:
-                path_list_s2_cloudy = ['Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B1_B2_B3.tif',
-                    'Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B4_B5_B6.tif',
-                    'Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B7_B8_B8A.tif',
-                    'Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B9_B10_B11.tif',
-                    'Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B12.tif']
+            self.s2 = self.loadOptical(self.path_list_s2)
+            np.save('s2_'+self.date+'_'+self.site+'.npy', self.s2)
 
             print("Loading sentinel-2 cloudy...")
-            self.s2_cloudy = self.loadOptical(path_list_s2_cloudy)
-            np.save('s2_cloudy_'+self.date+'.npy', self.s2_cloudy)
+            self.s2_cloudy = self.loadOptical(self.path_list_s2_cloudy)
+            np.save('s2_cloudy_'+self.date+'_'+self.site+'.npy', self.s2_cloudy)
         else:
-            self.s1 = np.load('s1_'+self.date+'.npy')
-            self.s2 = np.load('s2_'+self.date+'.npy')
-            self.s2_cloudy = np.load('s2_cloudy_'+self.date+'.npy')
+            self.s1 = np.load('s1_'+self.date+'_'+self.site+'.npy')
+            self.s2 = np.load('s2_'+self.date+'_'+self.site+'.npy')
+            self.s2_cloudy = np.load('s2_cloudy_'+self.date+'_'+self.site+'.npy')
             
         #self.s1 = self.s1[:,1000:1000+512, 1000:1000+512]
         #self.s2 = self.s2[:,1000:1000+512, 1000:1000+512]
@@ -213,6 +192,7 @@ class Image():
             self.s2 = self.get_normalized_data(self.s2, data_type = 2)
 
         ic(np.min(self.s1[1]), np.average(self.s1[1]), np.max(self.s1[1]))
+        ic(np.min(self.s2), np.average(self.s2), np.max(self.s2))
 
         #pdb.set_trace()
 
@@ -223,31 +203,6 @@ class Image():
         image[np.isnan(image)] = np.nanmean(image)
         #ic(np.min(image), np.average(image), np.max(image))
         return image
-    def loadOptical(self, path_list):
-        s2_b1_2_3 = self.loadImage(self.root_path + path_list[0])
-        s2_b4_5_6 = self.loadImage(self.root_path + path_list[1])
-        s2_b7_8_8A = self.loadImage(self.root_path + path_list[2])
-        s2_b9_10_11 = self.loadImage(self.root_path + path_list[3])
-        s2_b12 = self.loadImage(self.root_path + path_list[4])
-
-        ic(s2_b1_2_3.shape, s2_b4_5_6.shape, s2_b7_8_8A.shape, s2_b9_10_11.shape, s2_b12.shape)
-        print(s2_b1_2_3.shape, s2_b4_5_6.shape, s2_b7_8_8A.shape, s2_b9_10_11.shape, s2_b12.shape)
-
-        #pdb.set_trace()
-        s2 = np.concatenate((s2_b1_2_3, s2_b4_5_6, s2_b7_8_8A, s2_b9_10_11, s2_b12), axis=0)
-        del s2_b1_2_3, s2_b4_5_6, s2_b7_8_8A, s2_b9_10_11, s2_b12
-        print(s2.shape)
-
-        s2[s2 < 0] = 0
-        s2[s2 > 10000] = 10000
-        #np.save('s2_2018.npy', s2)
-
-        print(np.min(s2[1]), np.average(s2[1]), np.max(s2[1]))
-        print(np.min(s2[2]), np.average(s2[2]), np.max(s2[2]))
-        print(np.min(s2[3]), np.average(s2[3]), np.max(s2[3]))
-        
-        #pdb.set_trace()
-        return s2
 
 #        def loadOptical()
     def db2intensities(self, img):
@@ -258,12 +213,20 @@ class Image():
 
         #s1_vh_2018 = self.loadImage(self.root_path + 'cut_sent1_vh_2018.tif')
         #s1_vv_2018 = self.loadImage(self.root_path + 'cut_sent1_vv_2018.tif')
-        if self.date == '2018':
-            s1_vh = self.loadImage(self.root_path + 'COPERNICUS_S1_20180719_20180726_VH.tif')
-            s1_vv = self.loadImage(self.root_path + 'COPERNICUS_S1_20180719_20180726_VV.tif')
-        else:
-            s1_vh = self.loadImage(self.root_path + 'COPERNICUS_S1_20190721_20190726_VH.tif')
-            s1_vv = self.loadImage(self.root_path + 'COPERNICUS_S1_20190721_20190726_VH.tif')
+        if self.site == 'PA':
+            if self.date == '2018':
+                s1_vh = self.loadImage(self.root_path + 'COPERNICUS_S1_20180719_20180726_VH.tif')
+                s1_vv = self.loadImage(self.root_path + 'COPERNICUS_S1_20180719_20180726_VV.tif')
+            else:
+                s1_vh = self.loadImage(self.root_path + 'COPERNICUS_S1_20190721_20190726_VH.tif')
+                s1_vv = self.loadImage(self.root_path + 'COPERNICUS_S1_20190721_20190726_VH.tif')
+        elif self.site == 'MG':
+            if self.date == '2019':
+                s1_vh = self.loadImage(self.root_path + 'S1_R1_MT_2019_08_02_2019_08_09_VH.tif')
+                s1_vv = self.loadImage(self.root_path + 'S1_R1_MT_2019_08_02_2019_08_09_VV.tif')
+            elif self.date == '2020':
+                s1_vh = self.loadImage(self.root_path + 'S1_R1_MT_2020_08_03_2020_08_08_VH.tif')
+                s1_vv = self.loadImage(self.root_path + 'S1_R1_MT_2020_08_03_2020_08_08_VV.tif')
 
         print(s1_vh.shape)
 
@@ -283,7 +246,7 @@ class Image():
         print(np.min(s1[1]), np.average(s1[1]), np.max(s1[1]))
 
         return s1
-        
+
     def get_normalized_data(self, data_image, data_type):
 
         # SAR
@@ -420,7 +383,7 @@ class Image():
             return rgb.astype(np.uint8)
 
     def loadMask(self):
-        self.mask = np.load(self.root_path + 'tile_mask_0tr_1vl_2ts.npy')
+        self.mask = np.load(self.root_path + self.mask_filename)
         if self.crop_sample_im == True:
             self.mask = self.mask[self.crop0:self.crop0+self.delta_crop, self.crop0:self.crop0+self.delta_crop]
 
@@ -446,3 +409,144 @@ class Image():
             self.mask = np.pad(self.mask, pad_tuple_msk, mode = 'symmetric')
         except:
             print("No mask")
+
+        if self.site == 'PA':
+            self.root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/"
+        elif self.site == 'MG':
+            self.root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands_MG/"
+
+
+class ImagePA(Image):
+    def __init__(self, date, crop_sample_im, normalize, site, loadIms):
+        self.root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/"
+        self.mask_filename = 'tile_mask_0tr_1vl_2ts.npy'
+
+        if date == '2018':
+            self.path_list_s2 = ['Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif',
+                'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B4_B5_B6.tif',
+                'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B7_B8_B8A.tif',
+                'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B9_B10_B11.tif',
+                'Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B12.tif']
+            self.path_list_s2_cloudy = ['Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B1_B2_B3.tif',
+                'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B4_B5_B6.tif',
+                'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B7_B8_B8A.tif',
+                'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B9_B10_B11.tif',
+                'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B12.tif']
+        else:
+            self.path_list_s2 = ['Sentinel2_2019/COPERNICUS_S2_20190721_20190726_B1_B2_B3.tif',
+                'Sentinel2_2019/COPERNICUS_S2_20190721_20190726_B4_B5_B6.tif',
+                'Sentinel2_2019/COPERNICUS_S2_20190721_20190726_B7_B8_B8A.tif',
+                'Sentinel2_2019/COPERNICUS_S2_20190721_20190726_B9_B10_B11.tif',
+                'Sentinel2_2019/COPERNICUS_S2_20190721_20190726_B12.tif']
+            self.path_list_s2_cloudy = ['Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B1_B2_B3.tif',
+                'Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B4_B5_B6.tif',
+                'Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B7_B8_B8A.tif',
+                'Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B9_B10_B11.tif',
+                'Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B12.tif']   
+
+             
+        super().__init__(root_path, date, crop_sample_im, normalize, site, loadIms)
+    def loadOptical(self, path_list):
+        s2_b1_2_3 = self.loadImage(self.root_path + path_list[0])
+        s2_b4_5_6 = self.loadImage(self.root_path + path_list[1])
+        s2_b7_8_8A = self.loadImage(self.root_path + path_list[2])
+        s2_b9_10_11 = self.loadImage(self.root_path + path_list[3])
+        s2_b12 = self.loadImage(self.root_path + path_list[4])
+
+        ic(s2_b1_2_3.shape, s2_b4_5_6.shape, s2_b7_8_8A.shape, s2_b9_10_11.shape, s2_b12.shape)
+        print(s2_b1_2_3.shape, s2_b4_5_6.shape, s2_b7_8_8A.shape, s2_b9_10_11.shape, s2_b12.shape)
+
+        #pdb.set_trace()
+        s2 = np.concatenate((s2_b1_2_3, s2_b4_5_6, s2_b7_8_8A, s2_b9_10_11, s2_b12), axis=0)
+        del s2_b1_2_3, s2_b4_5_6, s2_b7_8_8A, s2_b9_10_11, s2_b12
+
+        print(s2.shape)
+
+        s2[s2 < 0] = 0
+        s2[s2 > 10000] = 10000
+        #np.save('s2_2018.npy', s2)
+
+        print(np.min(s2[1]), np.average(s2[1]), np.max(s2[1]))
+        print(np.min(s2[2]), np.average(s2[2]), np.max(s2[2]))
+        print(np.min(s2[3]), np.average(s2[3]), np.max(s2[3]))
+        
+        #pdb.set_trace()
+        return s2
+
+class ImageMG(Image):
+    def __init__(self, date, crop_sample_im, normalize, site, loadIms):
+        self.root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands_MG/"
+        # self.mask_filename = 'ref_2019_2020_20798x13420.npy'
+        self.mask_filename = 'MT_tr_0_val_1_ts_2_16795x10420.npy'
+        if date == '2019':
+            self.path_list_s2 = ['Sentinel2_2019/S2_R1_MT_2019_08_02_2019_08_05_B1_B2-008.tif',
+                'Sentinel2_2019/S2_R1_MT_2019_08_02_2019_08_05_B3_B4-009.tif',
+                'Sentinel2_2019/S2_R1_MT_2019_08_02_2019_08_05_B5_B6-013.tif',
+                'Sentinel2_2019/S2_R1_MT_2019_08_02_2019_08_05_B7_B8-014.tif',
+                'Sentinel2_2019/S2_R1_MT_2019_08_02_2019_08_05_B8A_B9-003.tif',
+                'Sentinel2_2019/S2_R1_MT_2019_08_02_2019_08_05_B10_B11-006.tif',
+                'Sentinel2_2019/S2_R1_MT_2019_08_02_2019_08_05_B12.tif']
+            self.path_list_s2_cloudy = ['Sentinel2_2019_Clouds/S2CL_R1_MT_2019_09_26_2019_09_29_B1_B2-002.tif',
+                'Sentinel2_2019_Clouds/S2CL_R1_MT_2019_09_26_2019_09_29_B3_B4-007.tif',
+                'Sentinel2_2019_Clouds/S2CL_R1_MT_2019_09_26_2019_09_29_B5_B6-003.tif',
+                'Sentinel2_2019_Clouds/S2CL_R1_MT_2019_09_26_2019_09_29_B7_B8-006.tif',
+                'Sentinel2_2019_Clouds/S2CL_R1_MT_2019_09_26_2019_09_29_B8A_B9-004.tif',
+                'Sentinel2_2019_Clouds/S2CL_R1_MT_2019_09_26_2019_09_29_B10_B11-005.tif',
+                'Sentinel2_2019_Clouds/S2CL_R1_MT_2019_09_26_2019_09_29_B12.tif']
+        else:
+            self.path_list_s2 = ['Sentinel2_2020/S2_R1_MT_2020_08_03_2020_08_15_B1_B2-005.tif',
+                'Sentinel2_2020/S2_R1_MT_2020_08_03_2020_08_15_B3_B4-011.tif',
+                'Sentinel2_2020/S2_R1_MT_2020_08_03_2020_08_15_B5_B6-010.tif',
+                'Sentinel2_2020/S2_R1_MT_2020_08_03_2020_08_15_B7_B8-012.tif',
+                'Sentinel2_2020/S2_R1_MT_2020_08_03_2020_08_15_B8A_B9-007.tif',
+                'Sentinel2_2020/S2_R1_MT_2020_08_03_2020_08_15_B10_B11-004.tif',
+                'Sentinel2_2020/S2_R1_MT_2020_08_03_2020_08_15_B12.tif']
+
+            self.path_list_s2_cloudy = ['Sentinel2_2020_Clouds/S2CL_R1_MT_2020_09_15_2020_09_18_B1_B2-003.tif',
+                'Sentinel2_2020_Clouds/S2CL_R1_MT_2020_09_15_2020_09_18_B3_B4-005.tif',
+                'Sentinel2_2020_Clouds/S2CL_R1_MT_2020_09_15_2020_09_18_B5_B6-006.tif',
+                'Sentinel2_2020_Clouds/S2CL_R1_MT_2020_09_15_2020_09_18_B7_B8-004.tif',
+                'Sentinel2_2020_Clouds/S2CL_R1_MT_2020_09_15_2020_09_18_B8A_B9-002.tif',
+                'Sentinel2_2020_Clouds/S2CL_R1_MT_2020_09_15_2020_09_18_B10_B11-007.tif',
+                'Sentinel2_2020_Clouds/S2CL_R1_MT_2020_09_15_2020_09_18_B12.tif']
+
+        super().__init__(date, crop_sample_im, normalize, site, loadIms)        
+    def loadOptical(self, path_list):
+        s2_b1_2 = self.loadImage(self.root_path + path_list[0])[:, :-4000, 3000:]
+        ic(s2_b1_2.shape, s2_b1_2.dtype)
+        s2_b3_4 = self.loadImage(self.root_path + path_list[1])[:, :-4000, 3000:]
+        s2_b5_6 = self.loadImage(self.root_path + path_list[2])[:, :-4000, 3000:]
+        s2_b7_8 = self.loadImage(self.root_path + path_list[3])[:, :-4000, 3000:]
+        s2_b8A_9 = self.loadImage(self.root_path + path_list[4])[:, :-4000, 3000:]
+        s2_b10_11 = self.loadImage(self.root_path + path_list[5])[:, :-4000, 3000:]
+        s2_b12 = self.loadImage(self.root_path + path_list[6])[:, :-4000, 3000:]
+
+        ic(s2_b1_2.shape, s2_b3_4.shape, s2_b5_6.shape, s2_b7_8.shape, s2_b8A_9.shape)
+
+        #pdb.set_trace()
+        s2 = np.concatenate((s2_b1_2, s2_b3_4, s2_b5_6, s2_b7_8, s2_b8A_9, s2_b10_11, s2_b12), axis=0)
+        del s2_b1_2, s2_b3_4, s2_b5_6, s2_b7_8, s2_b8A_9, s2_b10_11, s2_b12
+
+        ic(s2.shape, s2.dtype)
+
+    #    super().loadOptical(s2)
+    
+    #def loadOptical(self, s2):
+
+        print(s2.shape)
+
+        s2[s2 < 0] = 0
+        s2[s2 > 10000] = 10000
+        #np.save('s2_2018.npy', s2)
+
+        print(np.min(s2[1]), np.average(s2[1]), np.max(s2[1]))
+        print(np.min(s2[2]), np.average(s2[2]), np.max(s2[2]))
+        print(np.min(s2[3]), np.average(s2[3]), np.max(s2[3]))
+        
+        #pdb.set_trace()
+        return s2
+    def loadMask(self):
+        super().loadMask()
+        self.mask = self.mask
+        ic(self.mask.shape)
+#        self.mask = self.mask[:-4000, 3000:]
