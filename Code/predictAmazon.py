@@ -82,7 +82,10 @@ class ImageReconstruction(object):
                 patch_s2 = patch_s2[np.newaxis,...]
                 
                 # infer = self.sess.run(self.tensor, feed_dict={inputs: patch})
-
+                if patch_s2.shape[-1] != 1024:
+                    ic(patch_s1.shape, patch_s2.shape, i, j, i*stride, i*stride + self.patch_size,
+                        j*stride, j*stride + self.patch_size)
+                    pdb.set_trace()
                 predicted = self.model.predict_on_batch([patch_s2, patch_s1])[:, 0:self.output_c_dim]
                 probs[:, i*stride : i*stride+stride, 
                       j*stride : j*stride+stride] = predicted[0, :, overlap//2 : overlap//2 + stride, 
@@ -100,8 +103,8 @@ class ImageReconstruction(object):
 
 class Image():
     def __init__(self,
-        date = '2018', crop_sample_im = False, normalize = True, site = 'PA', loadIms = False):
-        self.site = site # PA,MG
+        date = '2018', crop_sample_im = False, normalize = True, loadIms = False):
+        #self.site = site # PA,MG
         self.loadIms = loadIms
 
         self.normalize = normalize
@@ -222,11 +225,11 @@ class Image():
                 s1_vv = self.loadImage(self.root_path + 'COPERNICUS_S1_20190721_20190726_VH.tif')
         elif self.site == 'MG':
             if self.date == '2019':
-                s1_vh = self.loadImage(self.root_path + 'S1_R1_MT_2019_08_02_2019_08_09_VH.tif')
-                s1_vv = self.loadImage(self.root_path + 'S1_R1_MT_2019_08_02_2019_08_09_VV.tif')
+                s1_vh = self.loadImage(self.root_path + 'S1_R1_MT_2019_08_02_2019_08_09_VH.tif')#[:-4000, 3000:]
+                s1_vv = self.loadImage(self.root_path + 'S1_R1_MT_2019_08_02_2019_08_09_VV.tif')#[:-4000, 3000:]
             elif self.date == '2020':
-                s1_vh = self.loadImage(self.root_path + 'S1_R1_MT_2020_08_03_2020_08_08_VH.tif')
-                s1_vv = self.loadImage(self.root_path + 'S1_R1_MT_2020_08_03_2020_08_08_VV.tif')
+                s1_vh = self.loadImage(self.root_path + 'S1_R1_MT_2020_08_03_2020_08_08_VH.tif')#[:-4000, 3000:]
+                s1_vv = self.loadImage(self.root_path + 'S1_R1_MT_2020_08_03_2020_08_08_VV.tif')#[:-4000, 3000:]
 
         print(s1_vh.shape)
 
@@ -417,7 +420,8 @@ class Image():
 
 
 class ImagePA(Image):
-    def __init__(self, date, crop_sample_im, normalize, site, loadIms):
+    def __init__(self, date, crop_sample_im, normalize, loadIms):
+        self.site = 'PA'
         self.root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/"
         self.mask_filename = 'tile_mask_0tr_1vl_2ts.npy'
 
@@ -445,7 +449,7 @@ class ImagePA(Image):
                 'Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B12.tif']   
 
              
-        super().__init__(root_path, date, crop_sample_im, normalize, site, loadIms)
+        super().__init__(date, crop_sample_im, normalize, loadIms)
     def loadOptical(self, path_list):
         s2_b1_2_3 = self.loadImage(self.root_path + path_list[0])
         s2_b4_5_6 = self.loadImage(self.root_path + path_list[1])
@@ -474,10 +478,11 @@ class ImagePA(Image):
         return s2
 
 class ImageMG(Image):
-    def __init__(self, date, crop_sample_im, normalize, site, loadIms):
+    def __init__(self, date, crop_sample_im, normalize, loadIms):
+        self.site = 'MG'
         self.root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands_MG/"
         # self.mask_filename = 'ref_2019_2020_20798x13420.npy'
-        self.mask_filename = 'MT_tr_0_val_1_ts_2_16795x10420.npy'
+        self.mask_filename = 'MT_tr_0_val_1_ts_2_16795x10420_new.npy'
         if date == '2019':
             self.path_list_s2 = ['Sentinel2_2019/S2_R1_MT_2019_08_02_2019_08_05_B1_B2-008.tif',
                 'Sentinel2_2019/S2_R1_MT_2019_08_02_2019_08_05_B3_B4-009.tif',
@@ -510,7 +515,7 @@ class ImageMG(Image):
                 'Sentinel2_2020_Clouds/S2CL_R1_MT_2020_09_15_2020_09_18_B10_B11-007.tif',
                 'Sentinel2_2020_Clouds/S2CL_R1_MT_2020_09_15_2020_09_18_B12.tif']
 
-        super().__init__(date, crop_sample_im, normalize, site, loadIms)        
+        super().__init__(date, crop_sample_im, normalize, loadIms)        
     def loadOptical(self, path_list):
         s2_b1_2 = self.loadImage(self.root_path + path_list[0])[:, :-4000, 3000:]
         ic(s2_b1_2.shape, s2_b1_2.dtype)

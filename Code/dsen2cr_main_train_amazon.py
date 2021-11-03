@@ -401,7 +401,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         date = dates[0]
         
         im_2018 = imageObj(date = date, crop_sample_im = crop_sample_im, 
-            normalize = False, site = site, loadIms = loadIms)
+            normalize = False, loadIms = loadIms)
         ic(np.min(im_2018.s1), np.min(im_2018.s2), np.min(im_2018.s2_cloudy))
         ic(np.average(im_2018.s1), np.average(im_2018.s2), np.average(im_2018.s2_cloudy))
         ic(np.max(im_2018.s1), np.max(im_2018.s2), np.max(im_2018.s2_cloudy))
@@ -414,7 +414,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         date = dates[1]
         crop_sample_im = False
         im_2019 = imageObj(date = date, crop_sample_im = crop_sample_im, 
-            normalize = False, site = site, loadIms = loadIms)
+            normalize = False, loadIms = loadIms)
         ic(np.min(im_2019.s1), np.min(im_2019.s2), np.min(im_2019.s2_cloudy))
         ic(np.average(im_2019.s1), np.average(im_2019.s2), np.average(im_2019.s2_cloudy))
         ic(np.max(im_2019.s1), np.max(im_2019.s2), np.max(im_2019.s2_cloudy))

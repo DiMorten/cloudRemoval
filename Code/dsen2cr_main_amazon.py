@@ -17,7 +17,7 @@ import pdb
 K.set_image_data_format('channels_first')
 
 import pickle
-from predictAmazon import Image, ImageReconstruction
+from predictAmazon import Image, ImageReconstruction, ImagePA, ImageMG
 ic.configureOutput(includeContext=True)
 from tools.image_metrics import metrics_get, metrics_get_mask
 import cv2
@@ -34,12 +34,20 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 
     remove_60m_bands = False
 
-    model_name = 'DSen2-CR_001'  # model name for training
     if remove_60m_bands == True: 
         model_name = model_name + "_less60m"
         bands = 10
     else:
         bands = 13
+
+    
+    site = 'MG'
+    imageObj = ImagePA if site == 'PA' else ImageMG
+    dates = ['2018', '2019'] if site == 'PA' else ['2019', '2020']
+
+    model_name = 'DSen2-CR_001_' + site  # model name for training
+
+    ic(site, imageObj, dates, model_name)
 
     # model parameters
     num_layers = 16  # B value in paper
@@ -210,6 +218,10 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PREDICT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if predict_file is not None:
+
+        change_time = 'T0'
+        date = dates[0] if change_time == 'T0' else dates[1]
+
         if predict_data_type == 'val':
             predict_filelist = val_filelist
         elif predict_data_type == 'test':
@@ -222,9 +234,11 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         
         # load the model weights at checkpoint
         model.load_weights(predict_file)
-        date = '2018'
+
         crop_sample_im = False
-        im = Image(date = date, crop_sample_im = crop_sample_im)
+        loadIms = False
+        im = imageObj(date = date, crop_sample_im = crop_sample_im, normalize = True,
+            loadIms = loadIms)
         im.loadMask()
 
         ic(np.min(im.s1), np.min(im.s2), np.min(im.s2_cloudy))
@@ -240,7 +254,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         #save_id = 'predictions_pretrained'
         #save_id = 'predictions_remove60m'
         
-        
+        save_id = save_id + '_' + site
+
         imReconstruction = ImageReconstruction(model, output_c_dim = bands, 
             patch_size=crop_size, overlap_percent = overlap)
         predictionLoad = False
@@ -256,9 +271,9 @@ def run_dsen2cr(predict_file=None, resume_file=None):
             
             predictions = np.clip(predictions, 0, 10000.0)
                 
-            np.save(save_id+date+'.npy', predictions)
+            # np.save(save_id+date+'.npy', predictions)
             if save_unnormalized == True:
-                np.save(save_id+'_unnorm_' + date+'.npy', predictions*2000)
+                np.save(save_id + '_unnorm_' + date+'_' + site + '.npy', predictions*2000)
             #pdb.set_trace()
 
         else:
