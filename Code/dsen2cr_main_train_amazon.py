@@ -470,6 +470,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
                                                 prefix = 1,
                                                 percent=patch_overlap)
         '''
+        ic(im_2018.s1.shape, im_2018.s2_cloudy.shape, im_2018.s2.shape)
+        ic(im_2019.s1.shape, im_2019.s2_cloudy.shape, im_2019.s2.shape)
         # im_2019 = im_2018
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TRAIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         ims = {'s1_2018': im_2018.s1, 

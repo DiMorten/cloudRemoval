@@ -527,7 +527,6 @@ class DataGenerator(keras.utils.Sequence):
 
 
 
-
 def GeoReference_Raster_from_Source_data(source_file, 
     numpy_image, target_file, bands):
 

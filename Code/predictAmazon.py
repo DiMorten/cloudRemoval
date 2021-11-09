@@ -144,7 +144,10 @@ class Image():
             self.s1 = np.load('s1_'+self.date+'_'+self.site+'.npy')
             self.s2 = np.load('s2_'+self.date+'_'+self.site+'.npy')
             self.s2_cloudy = np.load('s2_cloudy_'+self.date+'_'+self.site+'.npy')
-            
+        
+        if self.site == 'MG':
+            self.s1 = self.s1[:, :-4000, 3000:]
+            ic(self.s1.shape)
         #self.s1 = self.s1[:,1000:1000+512, 1000:1000+512]
         #self.s2 = self.s2[:,1000:1000+512, 1000:1000+512]
         #self.s2_cloudy = self.s2_cloudy[:,1000:1000+512, 1000:1000+512]
@@ -225,11 +228,11 @@ class Image():
                 s1_vv = self.loadImage(self.root_path + 'COPERNICUS_S1_20190721_20190726_VH.tif')
         elif self.site == 'MG':
             if self.date == '2019':
-                s1_vh = self.loadImage(self.root_path + 'S1_R1_MT_2019_08_02_2019_08_09_VH.tif')#[:-4000, 3000:]
-                s1_vv = self.loadImage(self.root_path + 'S1_R1_MT_2019_08_02_2019_08_09_VV.tif')#[:-4000, 3000:]
+                s1_vh = self.loadImage(self.root_path + 'S1_R1_MT_2019_08_02_2019_08_09_VH.tif')
+                s1_vv = self.loadImage(self.root_path + 'S1_R1_MT_2019_08_02_2019_08_09_VV.tif')
             elif self.date == '2020':
-                s1_vh = self.loadImage(self.root_path + 'S1_R1_MT_2020_08_03_2020_08_08_VH.tif')#[:-4000, 3000:]
-                s1_vv = self.loadImage(self.root_path + 'S1_R1_MT_2020_08_03_2020_08_08_VV.tif')#[:-4000, 3000:]
+                s1_vh = self.loadImage(self.root_path + 'S1_R1_MT_2020_08_03_2020_08_08_VH.tif')
+                s1_vv = self.loadImage(self.root_path + 'S1_R1_MT_2020_08_03_2020_08_08_VV.tif')
 
         print(s1_vh.shape)
 
@@ -239,7 +242,8 @@ class Image():
         s1_vh[s1_vh > 0] = 0
 
         s1 = np.concatenate((s1_vv, s1_vh), axis = 0)
-        print(s1.shape)
+        ic(s1.shape)
+        #pdb.set_trace()
         
         # checkimage for nans
         s1[np.isnan(s1)] = np.nanmean(s1)

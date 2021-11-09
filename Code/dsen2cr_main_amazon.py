@@ -45,7 +45,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     imageObj = ImagePA if site == 'PA' else ImageMG
     dates = ['2018', '2019'] if site == 'PA' else ['2019', '2020']
 
-    model_name = 'DSen2-CR_001_' + site  # model name for training
+    model_name = 'DSen2-CR_001_noshadow' + site  # model name for training
+    #model_name = 'DSen2-CR_001_' + site  # model name for training
 
     ic(site, imageObj, dates, model_name)
 
@@ -230,6 +231,30 @@ def run_dsen2cr(predict_file=None, resume_file=None):
             raise ValueError('Prediction data type not recognized.')
         #ic(predict_filelist)
 
+        only_get_tif = True
+        if only_get_tif == True:
+            save_id = 'predictions_scratch'
+            #save_id = 'predictions_pretrained'
+            #save_id = 'predictions_remove60m'
+            
+            save_id = save_id + '_' + site
+            ic(save_id+ '_unnorm_'+date+'.npy')
+            predictions = np.load(save_id+ '_unnorm_'+date+'.npy').astype(np.float32)
+
+            ic(np.mean(predictions), np.min(predictions), np.max(predictions))
+            ic(predictions.shape)
+            predictions = np.pad(predictions, ((0,0),(0,4000),(3000,0)))
+            ic(predictions[0,-1,0], predictions[0,0,-1], predictions[0,-1,-1])
+            ic(predictions.shape)
+
+            #original_im_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif"
+            original_im_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands_MG/Sentinel2_2019/S2_R1_MT_2019_08_02_2019_08_05_B1_B2-008.tif"
+            
+            produced_im_path = save_id+"_"+date+".tif"
+            GeoReference_Raster_from_Source_data(original_im_path, 
+                predictions, produced_im_path, bands = bands)
+            pdb.set_trace()
+
         print("Predicting using file: {}".format(predict_file))
         
         # load the model weights at checkpoint
@@ -279,6 +304,11 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         else:
             predictions = np.load(save_id+date+'.npy').astype(np.float32)
 
+        original_im_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif"
+        produced_im_path = save_id+"_"+date+".tif"
+        GeoReference_Raster_from_Source_data(original_im_path, 
+            predictions*2000, produced_im_path, bands = bands)
+
         ic(np.average(im.s2), np.average(predictions), 
             np.std(im.s2), np.std(predictions))
         ic(np.min(predictions*2000), np.average(predictions*2000), 
@@ -286,7 +316,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
             
         #pdb.set_trace()
         #===================================== Get metrics ======================#
-        metrics_get_flag = True
+        metrics_get_flag = False
         if metrics_get_flag == True:
             if remove_60m_bands == True:
                 metrics_get(im.s2[np.r_[1:9,11:13]], predictions)
@@ -307,10 +337,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         ic(predictions.dtype, predictions.shape)
         # pdb.set_trace()
 
-        original_im_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif"
-        produced_im_path = save_id+"_"+date+".tif"
-        GeoReference_Raster_from_Source_data(original_im_path, 
-            predictions*2000, produced_im_path, bands = bands)
+        
         GeoReference_Raster_from_Source_data(original_im_path, 
             im.s2*2000, "s2_"+date+".tif", bands = im.s2.shape[0])
         GeoReference_Raster_from_Source_data(original_im_path, 
