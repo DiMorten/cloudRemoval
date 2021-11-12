@@ -501,7 +501,9 @@ class DataGenerator(keras.utils.Sequence):
 
             if data_type == 3 and self.use_cloud_mask:
                 cloud_mask = get_cloud_cloudshadow_mask(data_image, self.cloud_threshold)
-                cloud_mask[cloud_mask != 0] = 1
+                #cloud_mask[cloud_mask != 0] = 1
+                cloud_mask[cloud_mask != 1] = 0
+                
                 ic(i, ID, cloud_mask.shape, data_image.shape)
                 cloud_mask_batch[i,] = cloud_mask
 

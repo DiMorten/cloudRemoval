@@ -44,7 +44,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     imageObj = ImagePA if site == 'PA' else ImageMG
     dates = ['2018', '2019'] if site == 'PA' else ['2019', '2020']
 
-    model_name = 'DSen2-CR_001_' + site  # model name for training
+    model_name = 'DSen2-CR_001_noshadow' + site  # model name for training
+#    model_name = 'DSen2-CR_001_' + site  # model name for training
 
     ic(site, imageObj, dates, model_name)
 
