@@ -98,14 +98,60 @@ def get_cloud_cloudshadow_mask(data_image, cloud_threshold = 0.2):
     #pdb.set_trace()
     return cloud_cloudshadow_mask
 
+def loadImage(path):
+    src = rasterio.open(path, 'r', driver='GTiff')
+    image = src.read()
+    src.close()
+    image[np.isnan(image)] = np.nanmean(image)
+    #ic(np.min(image), np.average(image), np.max(image))
+    return image    
+
+def s2_load(paths):
+    bands = []
+    for path in paths:
+        bands.append(loadImage(path))
+    s2 = np.stack(bands, axis = 0)
+    print(s2.shape)
+    return s2
 if __name__ == '__main__':
-    path = ""
-    date = "2019"
 
-    filename = path + 's2_'+date+'.npy'
-    # filename = path + 's2_cloudy_'+date+'.npy'
 
-    s2 = np.load(filename)
+    isNrw = True
+    if isNrw == False:
+        path = ""
+        date = "2019"
+
+        filename = path + 's2_'+date+'.npy'
+        # filename = path + 's2_cloudy_'+date+'.npy'
+
+        s2 = np.load(filename)
+
+    ## NRW
+    else:
+        opt_name = ['R10m/T32UMC_20200601T103629_B02_10m.jp2',
+                            'R10m/T32UMC_20200601T103629_B03_10m.jp2',
+                            'R10m/T32UMC_20200601T103629_B04_10m.jp2',
+                            'R20m/T32UMC_20200601T103629_B05_20m.jp2',
+                            'R20m/T32UMC_20200601T103629_B06_20m.jp2',
+                            'R20m/T32UMC_20200601T103629_B07_20m.jp2',
+                            'R10m/T32UMC_20200601T103629_B08_10m.jp2',
+                            'R20m/T32UMC_20200601T103629_B8A_20m.jp2',
+                            'R20m/T32UMC_20200601T103629_B11_20m.jp2',
+                            'R20m/T32UMC_20200601T103629_B12_20m.jp2']
+                            
+        opt_cloudy_name = ['R10m/T32UMC_20200606T104031_B02_10m.jp2',
+                            'R10m/T32UMC_20200606T104031_B03_10m.jp2',
+                            'R10m/T32UMC_20200606T104031_B04_10m.jp2',
+                            'R20m/T32UMC_20200606T104031_B05_20m.jp2',
+                            'R20m/T32UMC_20200606T104031_B06_20m.jp2',
+                            'R20m/T32UMC_20200606T104031_B07_20m.jp2',
+                            'R10m/T32UMC_20200606T104031_B08_10m.jp2',
+                            'R20m/T32UMC_20200606T104031_B8A_20m.jp2',
+                            'R20m/T32UMC_20200606T104031_B11_20m.jp2',
+                            'R20m/T32UMC_20200606T104031_B12_20m.jp2']
+        path_base = ''
+        s2 = s2_load(opt_name)
+        pdb.set_trace()
 
     cloud_cloudshadow_mask = get_cloud_cloudshadow_mask(s2, cloud_threshold = 0.2).astype(np.int8)
     # print("cloud_cloudshadow_mask.shape: ", cloud_cloudshadow_mask.shape)
@@ -115,4 +161,8 @@ if __name__ == '__main__':
     plt.figure()
     plt.imshow(cloud_cloudshadow_mask)
     plt.show()
-    #pdb.set_trace()
+
+    plt.figure()
+    plt.imshow(cloud_cloudshadow_mask)
+    plt.axis('off')
+    plt.savefig('cloudmask_' + filename + '.png', dpi = 500)

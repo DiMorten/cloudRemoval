@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 import tools.image_metrics as img_met
 from dsen2cr_network import DSen2CR_model
-from dsen2cr_tools import train_dsen2cr, predict_dsen2cr
+from dsen2cr_tools import train_dsen2cr_amazon, predict_dsen2cr
 from keras.optimizers import Nadam
 from keras.utils import multi_gpu_model
 from tools.dataIO import get_train_val_test_filelists
@@ -23,7 +23,7 @@ from tools.image_metrics import metrics_get, metrics_get_mask
 import cv2
 import matplotlib.pyplot as plt 
 import tifffile as tiff
-from tools.dataIO import GeoReference_Raster_from_Source_data
+from tools.dataIO import GeoReference_Raster_from_Source_data, Split_in_Patches
 import traceback
 def run_dsen2cr(predict_file=None, resume_file=None):
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -46,7 +46,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     dates = ['2018', '2019'] if site == 'PA' else ['2019', '2020']
 
     model_name = 'DSen2-CR_001_noshadow' + site  # model name for training
-    #model_name = 'DSen2-CR_001_' + site  # model name for training
+#    model_name = 'DSen2-CR_001_' + site  # model name for training
 
     ic(site, imageObj, dates, model_name)
 
@@ -95,7 +95,9 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 
     # training parameters
     initial_epoch = 0  # start at epoch number
-    epochs_nr = 8  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
+    #epochs_nr = 8  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
+    epochs_nr = 60  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
+    
     if predict_file !=None:    
         batch_size = 1  # training batch size to distribute over GPUs
     else:
@@ -163,7 +165,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
                                        num_layers=num_layers,
                                        feature_size=feature_size,
                                        use_cloud_mask=use_cloud_mask,
-                                       include_sar_input=include_sar_input)
+                                       include_sar_input=include_sar_input,
+                                       batch_size = batch_size)
     else:
         # handle multiple gpus
         with tf.device('/cpu:0'):
@@ -172,7 +175,8 @@ def run_dsen2cr(predict_file=None, resume_file=None):
                                                   num_layers=num_layers,
                                                   feature_size=feature_size,
                                                   use_cloud_mask=use_cloud_mask,
-                                                  include_sar_input=include_sar_input)
+                                                  include_sar_input=include_sar_input,
+                                                  batch_size = batch_size)
 
         model = multi_gpu_model(single_model, gpus=n_gpus)
 
@@ -185,6 +189,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 #    pdb.set_trace()
     # ic(test_filelist)
     # %%%%%%%%%%%%%%%%% override %%%%%%%%%
+
     
     with open("full_list.txt", "rb") as fp:   # Unpickling
         entire_filelist = pickle.load(fp)
@@ -231,7 +236,7 @@ def run_dsen2cr(predict_file=None, resume_file=None):
             raise ValueError('Prediction data type not recognized.')
         #ic(predict_filelist)
 
-        only_get_tif = True
+        only_get_tif = False
         if only_get_tif == True:
             save_id = 'predictions_scratch'
             #save_id = 'predictions_pretrained'
@@ -243,9 +248,10 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 
             ic(np.mean(predictions), np.min(predictions), np.max(predictions))
             ic(predictions.shape)
-            predictions = np.pad(predictions, ((0,0),(0,4000),(3000,0)))
-            ic(predictions[0,-1,0], predictions[0,0,-1], predictions[0,-1,-1])
-            ic(predictions.shape)
+            if site == 'MG':
+                predictions = np.pad(predictions, ((0,0),(0,4000),(3000,0)))
+                ic(predictions[0,-1,0], predictions[0,0,-1], predictions[0,-1,-1])
+                ic(predictions.shape)
 
             #original_im_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif"
             original_im_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands_MG/Sentinel2_2019/S2_R1_MT_2019_08_02_2019_08_05_B1_B2-008.tif"
@@ -259,6 +265,9 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         
         # load the model weights at checkpoint
         model.load_weights(predict_file)
+
+
+
 
         crop_sample_im = False
         loadIms = False
@@ -415,12 +424,102 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         
 
     else:
-        # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TRAIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        loadIms = True
+        crop_sample_im = False
+        ### just once
+        # date = dates[1]
+        # crop_sample_im = False
+        # im_2019 = imageObj(date = date, crop_sample_im = crop_sample_im, 
+        #     normalize = False, site = site, loadIms = loadIms)
+        # pdb.set_trace()
+        ### just once
+        date = dates[0]
+        
+        im_2018 = imageObj(date = date, crop_sample_im = crop_sample_im, 
+            normalize = False, loadIms = loadIms)
+        ic(np.min(im_2018.s1), np.min(im_2018.s2), np.min(im_2018.s2_cloudy))
+        ic(np.average(im_2018.s1), np.average(im_2018.s2), np.average(im_2018.s2_cloudy))
+        ic(np.max(im_2018.s1), np.max(im_2018.s2), np.max(im_2018.s2_cloudy))
+        ic(np.std(im_2018.s1), np.std(im_2018.s2), np.std(im_2018.s2_cloudy))
 
-        train_dsen2cr(model, model_name, base_out_path, resume_file, train_filelist, val_filelist, lr, log_step_freq,
+        ic(im_2018.s1.dtype, im_2018.s2.dtype, im_2018.s2_cloudy.dtype)
+
+        im_2018.loadMask()
+        
+        date = dates[1]
+        crop_sample_im = False
+        im_2019 = imageObj(date = date, crop_sample_im = crop_sample_im, 
+            normalize = False, loadIms = loadIms)
+        ic(np.min(im_2019.s1), np.min(im_2019.s2), np.min(im_2019.s2_cloudy))
+        ic(np.average(im_2019.s1), np.average(im_2019.s2), np.average(im_2019.s2_cloudy))
+        ic(np.max(im_2019.s1), np.max(im_2019.s2), np.max(im_2019.s2_cloudy))
+        ic(np.std(im_2019.s1), np.std(im_2019.s2), np.std(im_2019.s2_cloudy))
+
+        ic(im_2019.s1.dtype, im_2019.s2.dtype, im_2019.s2_cloudy.dtype)
+        
+        
+        # pdb.set_trace()
+        
+
+        augmentation_list = [0]
+        rows, cols = im_2018.s2.shape[1:3]
+        ic(rows, cols)
+        ic(im_2018.s2.shape)
+        patch_size = crop_size
+#        patch_overlap = 0.7
+        patch_overlap_t0 = 0.1
+
+        train_patches, val_patches, test_patches, \
+        step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
+                                                im_2018.mask, augmentation_list, 
+                                                prefix = 0,
+                                                percent=patch_overlap_t0)
+
+        patch_overlap_t1 = 0.1
+        
+        ic(len(train_patches))
+        ic(len(val_patches))
+        ic(len(test_patches))
+        
+        train_patches_t1, val_patches_t1, test_patches_t1, \
+        step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
+                                                im_2018.mask, augmentation_list, 
+                                                prefix = 1,
+                                                percent=patch_overlap_t1)
+
+        train_patches = train_patches + train_patches_t1
+        val_patches = val_patches + val_patches_t1
+        test_patches = test_patches + test_patches_t1
+        
+        ic(len(train_patches))
+        ic(len(val_patches))
+        ic(len(test_patches))
+        
+        im_2018.addPadding(patch_size, patch_overlap_t0)
+        im_2019.addPadding(patch_size, patch_overlap_t1)
+        # pdb.set_trace()
+        '''
+        train_patches, val_patches, test_patches, \
+        step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
+                                                im_2019.mask, augmentation_list, 
+                                                prefix = 1,
+                                                percent=patch_overlap)
+        '''
+        ic(im_2018.s1.shape, im_2018.s2_cloudy.shape, im_2018.s2.shape)
+        ic(im_2019.s1.shape, im_2019.s2_cloudy.shape, im_2019.s2.shape)
+        # im_2019 = im_2018
+        # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TRAIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        ims = {'s1_2018': im_2018.s1, 
+            's2_cloudy_2018': im_2018.s2_cloudy,
+            's2_2018': im_2018.s2,
+            's1_2019': im_2019.s1, 
+            's2_cloudy_2019': im_2019.s2_cloudy,
+            's2_2019': im_2019.s2
+            }
+        train_dsen2cr_amazon(model, model_name, base_out_path, resume_file, train_patches, val_patches, lr, log_step_freq,
                       shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
                       use_cloud_mask, cloud_threshold, crop_size, epochs_nr, initial_epoch, input_data_folder,
-                      input_shape, max_queue_size, use_multi_processing, workers)
+                      input_shape, max_queue_size, use_multi_processing, workers, remove_60m_bands, ims)
 
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MAIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
