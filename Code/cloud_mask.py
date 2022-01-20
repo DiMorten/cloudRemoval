@@ -4,6 +4,9 @@ import scipy.signal as scisig
 from icecream import ic
 import pdb
 import matplotlib.pyplot as plt
+import rasterio
+import gdal
+import cv2
 # naming conventions:
 # ['QA60', 'B1','B2',    'B3',    'B4',   'B5','B6','B7', 'B8','  B8A', 'B9',          'B10', 'B11','B12']
 # ['QA60','cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'])
@@ -104,14 +107,32 @@ def loadImage(path):
     src.close()
     image[np.isnan(image)] = np.nanmean(image)
     #ic(np.min(image), np.average(image), np.max(image))
-    return image    
+    return image  
 
-def s2_load(paths):
+def loadImage(path):
+    # Read tiff Image
+    ic(path)
+    gdal_header = gdal.Open(path)
+    image = gdal_header.ReadAsArray()
+    ic(image.shape)
+    return image
+
+
+def s2_load(paths, 
+    bands_res = ['10m', '10m', '10m', '20m', '20m', '20m', '10m', '20m', '20m', '20m'],
+    dim = (10980, 10980)):
     bands = []
-    for path in paths:
-        bands.append(loadImage(path))
+#    bands_res = 
+    for band_res, path in zip(bands_res, paths):
+        print("init band...")
+        band_npy = np.squeeze(loadImage(path))
+        ic(band_npy.shape)
+        if band_res == '20m' or band_res == '60m':
+            band_npy = cv2.resize(band_npy, dim, interpolation = cv2.INTER_NEAREST)
+        bands.append(band_npy)
+        ic(band_npy.shape)
     s2 = np.stack(bands, axis = 0)
-    print(s2.shape)
+    ic(s2.shape)
     return s2
 if __name__ == '__main__':
 
@@ -128,7 +149,9 @@ if __name__ == '__main__':
 
     ## NRW
     else:
-        opt_name = ['R10m/T32UMC_20200601T103629_B02_10m.jp2',
+        filename = 'cloud_mask_nrw_cloudy'
+        opt_name = ['R60m/T32UMC_20200601T103629_B01_60m.jp2',
+                            'R10m/T32UMC_20200601T103629_B02_10m.jp2',
                             'R10m/T32UMC_20200601T103629_B03_10m.jp2',
                             'R10m/T32UMC_20200601T103629_B04_10m.jp2',
                             'R20m/T32UMC_20200601T103629_B05_20m.jp2',
@@ -136,10 +159,13 @@ if __name__ == '__main__':
                             'R20m/T32UMC_20200601T103629_B07_20m.jp2',
                             'R10m/T32UMC_20200601T103629_B08_10m.jp2',
                             'R20m/T32UMC_20200601T103629_B8A_20m.jp2',
+                            'R60m/T32UMC_20200601T103629_B09_60m.jp2',
+                            'R10m/S2_NRW_2020_06_01_B10.tif',
                             'R20m/T32UMC_20200601T103629_B11_20m.jp2',
                             'R20m/T32UMC_20200601T103629_B12_20m.jp2']
                             
-        opt_cloudy_name = ['R10m/T32UMC_20200606T104031_B02_10m.jp2',
+        opt_cloudy_name = ['R60m/T32UMC_20200606T104031_B01_60m.jp2',
+                            'R10m/T32UMC_20200606T104031_B02_10m.jp2',
                             'R10m/T32UMC_20200606T104031_B03_10m.jp2',
                             'R10m/T32UMC_20200606T104031_B04_10m.jp2',
                             'R20m/T32UMC_20200606T104031_B05_20m.jp2',
@@ -147,11 +173,15 @@ if __name__ == '__main__':
                             'R20m/T32UMC_20200606T104031_B07_20m.jp2',
                             'R10m/T32UMC_20200606T104031_B08_10m.jp2',
                             'R20m/T32UMC_20200606T104031_B8A_20m.jp2',
+                            'R60m/T32UMC_20200606T104031_B09_60m.jp2',
+                            'R10m/S2_NRW_2020_06_06_B10.tif',
                             'R20m/T32UMC_20200606T104031_B11_20m.jp2',
                             'R20m/T32UMC_20200606T104031_B12_20m.jp2']
-        path_base = ''
-        s2 = s2_load(opt_name)
-        pdb.set_trace()
+        bands_res = ['60m', '10m', '10m', '10m', '20m', '20m', '20m', '10m', 
+            '20m', '60m', '10m', '20m', '20m']
+        path_base = 'D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/NRW/S2_cloudy/'
+        s2 = s2_load([path_base + x for x in opt_cloudy_name], bands_res)
+        # pdb.set_trace()
 
     cloud_cloudshadow_mask = get_cloud_cloudshadow_mask(s2, cloud_threshold = 0.2).astype(np.int8)
     # print("cloud_cloudshadow_mask.shape: ", cloud_cloudshadow_mask.shape)
