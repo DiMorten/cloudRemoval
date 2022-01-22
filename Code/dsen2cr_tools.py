@@ -227,12 +227,7 @@ def train_dsen2cr_amazon(model, model_name, base_out_path, resume_file, train_fi
               'max_val_sar': max_val_sar,
               'cloud_threshold': cloud_threshold,
               'remove_60m_bands': remove_60m_bands}
-    training_generator = DataGeneratorAmazon(train_filelist, ims['s1_2018'],
-                 ims['s2_cloudy_2018'],
-                 ims['s2_2018'],
-                 ims['s1_2019'],
-                 ims['s2_cloudy_2019'],
-                 ims['s2_2019'], **params)
+    training_generator = DataGeneratorAmazon(train_filelist, ims, **params)
 
     params = {'input_dim': input_shape,
               'batch_size': batch_size,
@@ -251,12 +246,7 @@ def train_dsen2cr_amazon(model, model_name, base_out_path, resume_file, train_fi
               'remove_60m_bands': remove_60m_bands
               }
 
-    validation_generator = DataGeneratorAmazon(val_filelist, ims['s1_2018'],
-                 ims['s2_cloudy_2018'],
-                 ims['s2_2018'],
-                 ims['s1_2019'],
-                 ims['s2_cloudy_2019'],
-                 ims['s2_2019'], **params)
+    validation_generator = DataGeneratorAmazon(val_filelist, ims, **params)
     
     monitor = Monitor(validation_generator)
 

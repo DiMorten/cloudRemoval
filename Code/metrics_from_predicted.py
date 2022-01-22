@@ -3,7 +3,7 @@ from icecream import ic
 import rasterio
 from tools.image_metrics import metrics_get_mask, metrics_get
 import pdb
-from predictAmazon import Image
+from dataset import Image
 
 def get_raw_data(path):
     with rasterio.open(path, driver='GTiff') as src:

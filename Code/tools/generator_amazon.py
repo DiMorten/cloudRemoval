@@ -243,12 +243,7 @@ class DataGeneratorAmazon(keras.utils.Sequence):
 
     def __init__(self,
                  list_IDs,
-                 s1_2018,
-                 s2_cloudy_2018,
-                 s2_2018,
-                 s1_2019,
-                 s2_cloudy_2019,
-                 s2_2019,
+                 ims,
                  batch_size=32,
                  input_dim=((13, 256, 256), (2, 256, 256)),
                  scale=2000,
@@ -265,13 +260,8 @@ class DataGeneratorAmazon(keras.utils.Sequence):
                  cloud_threshold=0.2,
                  remove_60m_bands = False
                  ):
-        self.s1_2018 = s1_2018
-        self.s2_cloudy_2018 = s2_cloudy_2018
-        self.s2_2018 = s2_2018
+        self.ims = ims
 
-        self.s1_2019 = s1_2019
-        self.s2_cloudy_2019 = s2_cloudy_2019
-        self.s2_2019 = s2_2019
         if clip_min is None:
             clip_min = [[-25.0, -32.5], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
@@ -403,7 +393,7 @@ class DataGeneratorAmazon(keras.utils.Sequence):
                 #ic(output_opt_batch.shape)
                 #pdb.set_trace()
                 # print("s2_cloudy generator",np.average(input_opt_batch))
-                # print("s2_cloudy generator2",np.average(self.s2_cloudy_2018))
+                # print("s2_cloudy generator2",np.average(self.s1_cloudy_t0))
 
                 return ([input_opt_batch, input_sar_batch], [output_opt_cloud_batch])
             else:
@@ -516,11 +506,11 @@ class DataGeneratorAmazon(keras.utils.Sequence):
             dim = self.input_dim[0]
 
         if data_type == 1:
-            im = [self.s1_2018, self.s1_2019] 
+            im = [self.ims['s1_t0'], self.ims['s1_t1']] 
         elif data_type == 2:
-            im = [self.s2_2018, self.s2_2019]
+            im = [self.ims['s2_t0'], self.ims['s2_t1']]
         elif data_type == 3:
-            im = [self.s2_cloudy_2018, self.s2_cloudy_2019]
+            im = [self.ims['s2_cloudy_t0'], self.ims['s2_cloudy_t1']]
 
         batch = np.empty((self.batch_size, *dim)).astype('float32')
         ##ic(batch.shape)
@@ -529,7 +519,7 @@ class DataGeneratorAmazon(keras.utils.Sequence):
         for i, ID in enumerate(list_IDs_temp):
             # print("ID", ID)
             # if data_type == 3:
-            #     print("Before slice", np.shape(im), np.average(im), np.average(self.s2_cloudy_2018))
+            #     print("Before slice", np.shape(im), np.average(im), np.average(self.s1_cloudy_t0))
             data_image = im[ID[0]][:,ID[1]:ID[1]+self.crop_size,
                           ID[2]:ID[2]+self.crop_size].copy()
             # if data_type == 3:
@@ -540,7 +530,7 @@ class DataGeneratorAmazon(keras.utils.Sequence):
                 print("i",i)
                 print("ID", ID)
                 print("im.shape", im[0].shape)
-                print(np.average(self.s2_cloudy_2018[:,ID[1]:ID[1]+self.crop_size,
+                print(np.average(self.s1_cloudy_t0[:,ID[1]:ID[1]+self.crop_size,
                           ID[2]:ID[2]+self.crop_size]))
                 print("np.average(data_image)", np.average(data_image))
                 print("=====")

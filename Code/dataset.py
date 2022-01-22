@@ -19,7 +19,14 @@ from tools.image_metrics import metrics_get
 import matplotlib.pyplot as plt 
 import tifffile as tiff
 import pathlib
+import gdal
 
+def loadImage(path):
+    # Read tiff Image
+    ic(path)
+    gdal_header = gdal.Open(path)
+    image = gdal_header.ReadAsArray()
+    return image
 
 def make_dir(dir_path):
     if os.path.isdir(dir_path):
@@ -109,6 +116,7 @@ class Image():
 
         self.normalize = normalize
         self.crop_sample_im = crop_sample_im
+        # self.root_path = root_path
 
         print("creating ImageLoading object...")
 
@@ -134,11 +142,11 @@ class Image():
 
 
             print("Loading sentinel-2...")
-            self.s2 = self.loadOptical(self.path_list_s2)
+            self.s2 = self.loadOptical(self.path_list_s2, 'S2/')
             np.save('s2_'+self.date+'_'+self.site+'.npy', self.s2)
 
             print("Loading sentinel-2 cloudy...")
-            self.s2_cloudy = self.loadOptical(self.path_list_s2_cloudy)
+            self.s2_cloudy = self.loadOptical(self.path_list_s2_cloudy, 'S2_cloudy/')
             np.save('s2_cloudy_'+self.date+'_'+self.site+'.npy', self.s2_cloudy)
         else:
             self.s1 = np.load('s1_'+self.date+'_'+self.site+'.npy')
@@ -219,20 +227,9 @@ class Image():
 
         #s1_vh_2018 = self.loadImage(self.root_path + 'cut_sent1_vh_2018.tif')
         #s1_vv_2018 = self.loadImage(self.root_path + 'cut_sent1_vv_2018.tif')
-        if self.site == 'PA':
-            if self.date == '2018':
-                s1_vh = self.loadImage(self.root_path + 'COPERNICUS_S1_20180719_20180726_VH.tif')
-                s1_vv = self.loadImage(self.root_path + 'COPERNICUS_S1_20180719_20180726_VV.tif')
-            else:
-                s1_vh = self.loadImage(self.root_path + 'COPERNICUS_S1_20190721_20190726_VH.tif')
-                s1_vv = self.loadImage(self.root_path + 'COPERNICUS_S1_20190721_20190726_VH.tif')
-        elif self.site == 'MG':
-            if self.date == '2019':
-                s1_vh = self.loadImage(self.root_path + 'S1_R1_MT_2019_08_02_2019_08_09_VH.tif')
-                s1_vv = self.loadImage(self.root_path + 'S1_R1_MT_2019_08_02_2019_08_09_VV.tif')
-            elif self.date == '2020':
-                s1_vh = self.loadImage(self.root_path + 'S1_R1_MT_2020_08_03_2020_08_08_VH.tif')
-                s1_vv = self.loadImage(self.root_path + 'S1_R1_MT_2020_08_03_2020_08_08_VV.tif')
+        
+        s1_vh = self.loadImage(self.root_path + self.path_list_s1[0])
+        s1_vv = self.loadImage(self.root_path + self.path_list_s1[1])
 
         print(s1_vh.shape)
 
@@ -424,9 +421,10 @@ class Image():
 
 
 class ImagePA(Image):
-    def __init__(self, date, crop_sample_im, normalize, loadIms):
+    def __init__(self, date, crop_sample_im, normalize, loadIms, 
+            root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/"):
+        self.root_path = root_path
         self.site = 'PA'
-        self.root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/"
         self.mask_filename = 'tile_mask_0tr_1vl_2ts.npy'
 
         if date == '2018':
@@ -440,6 +438,8 @@ class ImagePA(Image):
                 'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B7_B8_B8A.tif',
                 'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B9_B10_B11.tif',
                 'Sentinel2_2018_Clouds/COPERNICUS_S2_20180611_B12.tif']
+            self.path_list_s1 = ['COPERNICUS_S1_20180719_20180726_VH.tif',
+                'COPERNICUS_S1_20180719_20180726_VV.tif']
         else:
             self.path_list_s2 = ['Sentinel2_2019/COPERNICUS_S2_20190721_20190726_B1_B2_B3.tif',
                 'Sentinel2_2019/COPERNICUS_S2_20190721_20190726_B4_B5_B6.tif',
@@ -451,10 +451,11 @@ class ImagePA(Image):
                 'Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B7_B8_B8A.tif',
                 'Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B9_B10_B11.tif',
                 'Sentinel2_2019_Clouds/COPERNICUS_S2_20190706_B12.tif']   
-
+            self.path_list_s1 = ['COPERNICUS_S1_20190721_20190726_VH.tif',
+                'COPERNICUS_S1_20190721_20190726_VV.tif']
              
         super().__init__(date, crop_sample_im, normalize, loadIms)
-    def loadOptical(self, path_list):
+    def loadOptical(self, path_list, folder):
         s2_b1_2_3 = self.loadImage(self.root_path + path_list[0])
         s2_b4_5_6 = self.loadImage(self.root_path + path_list[1])
         s2_b7_8_8A = self.loadImage(self.root_path + path_list[2])
@@ -482,9 +483,10 @@ class ImagePA(Image):
         return s2
 
 class ImageMG(Image):
-    def __init__(self, date, crop_sample_im, normalize, loadIms):
+    def __init__(self, date, crop_sample_im, normalize, loadIms, 
+            root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands_MG/"):
         self.site = 'MG'
-        self.root_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands_MG/"
+        self.root_path = root_path
         # self.mask_filename = 'ref_2019_2020_20798x13420.npy'
         self.mask_filename = 'MT_tr_0_val_1_ts_2_16795x10420_new.npy'
         if date == '2019':
@@ -502,6 +504,9 @@ class ImageMG(Image):
                 'Sentinel2_2019_Clouds/S2CL_R1_MT_2019_09_26_2019_09_29_B8A_B9-004.tif',
                 'Sentinel2_2019_Clouds/S2CL_R1_MT_2019_09_26_2019_09_29_B10_B11-005.tif',
                 'Sentinel2_2019_Clouds/S2CL_R1_MT_2019_09_26_2019_09_29_B12.tif']
+            
+            self.path_list_s1 = ['S1_R1_MT_2019_08_02_2019_08_09_VH.tif',
+                'S1_R1_MT_2019_08_02_2019_08_09_VV.tif']
         else:
             self.path_list_s2 = ['Sentinel2_2020/S2_R1_MT_2020_08_03_2020_08_15_B1_B2-005.tif',
                 'Sentinel2_2020/S2_R1_MT_2020_08_03_2020_08_15_B3_B4-011.tif',
@@ -519,8 +524,11 @@ class ImageMG(Image):
                 'Sentinel2_2020_Clouds/S2CL_R1_MT_2020_09_15_2020_09_18_B10_B11-007.tif',
                 'Sentinel2_2020_Clouds/S2CL_R1_MT_2020_09_15_2020_09_18_B12.tif']
 
+            self.path_list_s1 = ['S1_R1_MT_2020_08_03_2020_08_08_VH.tif',
+                'S1_R1_MT_2020_08_03_2020_08_08_VV.tif']
+
         super().__init__(date, crop_sample_im, normalize, loadIms)        
-    def loadOptical(self, path_list):
+    def loadOptical(self, path_list, folder):
         s2_b1_2 = self.loadImage(self.root_path + path_list[0])[:, :-4000, 3000:]
         ic(s2_b1_2.shape, s2_b1_2.dtype)
         s2_b3_4 = self.loadImage(self.root_path + path_list[1])[:, :-4000, 3000:]
@@ -559,3 +567,68 @@ class ImageMG(Image):
         self.mask = self.mask
         ic(self.mask.shape)
 #        self.mask = self.mask[:-4000, 3000:]
+
+class ImageNRW(Image):
+    def __init__(self, date, crop_sample_im, normalize, loadIms, root_path):
+        self.site = 'NRW'
+        self.dim = (10980, 10980)
+        self.root_path = root_path + self.site + '/'
+        self.resolution_list = ['60m', '10m', '10m', '10m', '20m', '20m', '20m', '10m', 
+                            '20m', '60m', '10m', '20m', '20m']
+
+        self.mask_filename = 'mask_training_0_val_1_test_2.npy'
+        self.path_list_s2 = ['R60m/T32UMC_20200601T103629_B01_60m.jp2',
+                            'R10m/T32UMC_20200601T103629_B02_10m.jp2',
+                            'R10m/T32UMC_20200601T103629_B03_10m.jp2',
+                            'R10m/T32UMC_20200601T103629_B04_10m.jp2',
+                            'R20m/T32UMC_20200601T103629_B05_20m.jp2',
+                            'R20m/T32UMC_20200601T103629_B06_20m.jp2',
+                            'R20m/T32UMC_20200601T103629_B07_20m.jp2',
+                            'R10m/T32UMC_20200601T103629_B08_10m.jp2',
+                            'R20m/T32UMC_20200601T103629_B8A_20m.jp2',
+                            'R60m/T32UMC_20200601T103629_B09_60m.jp2',
+                            'R10m/S2_NRW_2020_06_01_B10.tif',
+                            'R20m/T32UMC_20200601T103629_B11_20m.jp2',
+                            'R20m/T32UMC_20200601T103629_B12_20m.jp2']
+        self.path_list_s2_cloudy = ['R60m/T32UMC_20200606T104031_B01_60m.jp2',
+                            'R10m/T32UMC_20200606T104031_B02_10m.jp2',
+                            'R10m/T32UMC_20200606T104031_B03_10m.jp2',
+                            'R10m/T32UMC_20200606T104031_B04_10m.jp2',
+                            'R20m/T32UMC_20200606T104031_B05_20m.jp2',
+                            'R20m/T32UMC_20200606T104031_B06_20m.jp2',
+                            'R20m/T32UMC_20200606T104031_B07_20m.jp2',
+                            'R10m/T32UMC_20200606T104031_B08_10m.jp2',
+                            'R20m/T32UMC_20200606T104031_B8A_20m.jp2',
+                            'R60m/T32UMC_20200606T104031_B09_60m.jp2',
+                            'R10m/S2_NRW_2020_06_06_B10.tif',
+                            'R20m/T32UMC_20200606T104031_B11_20m.jp2',
+                            'R20m/T32UMC_20200606T104031_B12_20m.jp2']
+
+        self.path_list_s1 = ['S1/S1_NRW_2020_06_01_06_04_VH.tif', 
+                            'S1/S1_NRW_2020_06_01_06_04_VV.tif']
+        
+        super().__init__(date, crop_sample_im, normalize, loadIms) 
+    
+    def loadOptical(self, path_list, folder):
+        bands = []
+        for path, resolution in zip(path_list, self.resolution_list):
+            print("Starting band...")
+            ic(resolution)
+            band = loadImage(self.root_path + folder + path)
+            ic(band.shape)
+            if resolution == '20m' or resolution == '60m':
+                band = cv2.resize(band, self.dim, interpolation = cv2.INTER_NEAREST)
+            ic(band.shape)
+            bands.append(band)
+        
+        s2 = np.stack(bands, axis = 0)
+
+        s2[s2 < 0] = 0
+        s2[s2 > 10000] = 10000
+
+        ic(np.min(s2[1]), np.average(s2[1]), np.max(s2[1]))
+        ic(np.min(s2[2]), np.average(s2[2]), np.max(s2[2]))
+        ic(np.min(s2[3]), np.average(s2[3]), np.max(s2[3]))
+        
+        #pdb.set_trace()
+        return s2

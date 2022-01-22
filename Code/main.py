@@ -17,7 +17,7 @@ import pdb
 K.set_image_data_format('channels_first')
 
 import pickle
-from predictAmazon import Image, ImageReconstruction, ImagePA, ImageMG
+from dataset import Image, ImageReconstruction, ImagePA, ImageMG, ImageNRW
 ic.configureOutput(includeContext=True)
 from tools.image_metrics import metrics_get, metrics_get_mask
 import cv2
@@ -25,7 +25,13 @@ import matplotlib.pyplot as plt
 import tifffile as tiff
 from tools.dataIO import GeoReference_Raster_from_Source_data, Split_in_Patches
 import traceback
-def run_dsen2cr(predict_file=None, resume_file=None):
+import argparse
+
+
+def run_dsen2cr(args):
+    predict_file = args.predict_file
+    resume_file = args.resume_file
+    ic(predict_file, resume_file)
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SETUP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,8 +47,11 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         bands = 13
 
     
-    site = 'MG'
-    imageObj = ImagePA if site == 'PA' else ImageMG
+    site = args.dataset_name
+    if site == 'PA': imageObj = ImagePA
+    elif site == 'MG': imageObj = ImageMG
+    elif site == 'NRW': imageObj = ImageNRW
+
     dates = ['2018', '2019'] if site == 'PA' else ['2019', '2020']
 
     model_name = 'DSen2-CR_001_noshadow' + site  # model name for training
@@ -90,9 +99,10 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 
     dataset_list_filepath = '../Data/datasetfilelist.csv'
 
-    base_out_path = 'D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/results'
-    input_data_folder = 'D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset'
-
+    # base_out_path = 'D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/results'
+    # input_data_folder = 'D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset'
+    base_out_path = args.result_dir
+    input_data_folder = args.datasets_dir
     # training parameters
     initial_epoch = 0  # start at epoch number
     #epochs_nr = 8  # train for this amount of epochs. Checkpoints will be generated at the end of each epoch
@@ -183,47 +193,10 @@ def run_dsen2cr(predict_file=None, resume_file=None):
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
     print('Model compiled successfully!')
     ic(model.summary())
-    print("Getting file lists")
-    # train_filelist, val_filelist, test_filelist = get_train_val_test_filelists(dataset_list_filepath)
-    # ic(train_filelist)
-#    pdb.set_trace()
-    # ic(test_filelist)
-    # %%%%%%%%%%%%%%%%% override %%%%%%%%%
 
-    
-    with open("full_list.txt", "rb") as fp:   # Unpickling
-        entire_filelist = pickle.load(fp)
-    with open("val_list.txt", "rb") as fp:   # Unpickling
-        val_filelist = pickle.load(fp)
-
-    if predict_file != None:
-
-        test_filelist = entire_filelist.copy()
-        train_filelist = test_filelist[:20]
-        #val_filelist = test_filelist[20:40]
-        val_filelist = val_filelist[0:200]
-        #ic(test_filelist)
-        
-        
-    else:
-#        train_filelist = entire_filelist.copy()
-
-#        ic(len(entire_filelist), int(len(entire_filelist)*0.1))
-        train_filelist = entire_filelist[:-int(len(entire_filelist)*0.1)] # 2769
-        val_filelist = entire_filelist[-int(len(entire_filelist)*0.1):]
-        test_filelist = val_filelist.copy()
-
-#        train_filelist = train_filelist[:32]
-#        val_filelist = train_filelist[32:64]
-#        ic(train_filelist)
-
-
-    print("Number of train files found: ", len(train_filelist))
-    print("Number of validation files found: ", len(val_filelist))
-    print("Number of test files found: ", len(test_filelist))
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PREDICT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if predict_file is not None:
+    if args.phase != 'train':
 
         change_time = 'T0'
         date = dates[0] if change_time == 'T0' else dates[1]
@@ -424,97 +397,100 @@ def run_dsen2cr(predict_file=None, resume_file=None):
         
 
     else:
-        loadIms = True
+        loadIms = False
         crop_sample_im = False
         ### just once
         # date = dates[1]
         # crop_sample_im = False
-        # im_2019 = imageObj(date = date, crop_sample_im = crop_sample_im, 
+        # im_t1 = imageObj(date = date, crop_sample_im = crop_sample_im, 
         #     normalize = False, site = site, loadIms = loadIms)
         # pdb.set_trace()
         ### just once
         date = dates[0]
         
-        im_2018 = imageObj(date = date, crop_sample_im = crop_sample_im, 
-            normalize = False, loadIms = loadIms)
-        ic(np.min(im_2018.s1), np.min(im_2018.s2), np.min(im_2018.s2_cloudy))
-        ic(np.average(im_2018.s1), np.average(im_2018.s2), np.average(im_2018.s2_cloudy))
-        ic(np.max(im_2018.s1), np.max(im_2018.s2), np.max(im_2018.s2_cloudy))
-        ic(np.std(im_2018.s1), np.std(im_2018.s2), np.std(im_2018.s2_cloudy))
+        im_t0 = imageObj(date = date, crop_sample_im = crop_sample_im, 
+            normalize = False, loadIms = loadIms, root_path = args.root_path)
+        ic(np.min(im_t0.s1), np.min(im_t0.s2), np.min(im_t0.s2_cloudy))
+        ic(np.average(im_t0.s1), np.average(im_t0.s2), np.average(im_t0.s2_cloudy))
+        ic(np.max(im_t0.s1), np.max(im_t0.s2), np.max(im_t0.s2_cloudy))
+        ic(np.std(im_t0.s1), np.std(im_t0.s2), np.std(im_t0.s2_cloudy))
 
-        ic(im_2018.s1.dtype, im_2018.s2.dtype, im_2018.s2_cloudy.dtype)
+        ic(im_t0.s1.dtype, im_t0.s2.dtype, im_t0.s2_cloudy.dtype)
 
-        im_2018.loadMask()
-        
+        im_t0.loadMask()
+
+
         date = dates[1]
         crop_sample_im = False
-        im_2019 = imageObj(date = date, crop_sample_im = crop_sample_im, 
-            normalize = False, loadIms = loadIms)
-        ic(np.min(im_2019.s1), np.min(im_2019.s2), np.min(im_2019.s2_cloudy))
-        ic(np.average(im_2019.s1), np.average(im_2019.s2), np.average(im_2019.s2_cloudy))
-        ic(np.max(im_2019.s1), np.max(im_2019.s2), np.max(im_2019.s2_cloudy))
-        ic(np.std(im_2019.s1), np.std(im_2019.s2), np.std(im_2019.s2_cloudy))
+        im_t1 = imageObj(date = date, crop_sample_im = crop_sample_im, 
+            normalize = False, loadIms = loadIms, root_path = args.root_path)
+        ic(np.min(im_t1.s1), np.min(im_t1.s2), np.min(im_t1.s2_cloudy))
+        ic(np.average(im_t1.s1), np.average(im_t1.s2), np.average(im_t1.s2_cloudy))
+        ic(np.max(im_t1.s1), np.max(im_t1.s2), np.max(im_t1.s2_cloudy))
+        ic(np.std(im_t1.s1), np.std(im_t1.s2), np.std(im_t1.s2_cloudy))
 
-        ic(im_2019.s1.dtype, im_2019.s2.dtype, im_2019.s2_cloudy.dtype)
-        
+        ic(im_t1.s1.dtype, im_t1.s2.dtype, im_t1.s2_cloudy.dtype)
+
+            
         
         # pdb.set_trace()
         
 
         augmentation_list = [0]
-        rows, cols = im_2018.s2.shape[1:3]
+        rows, cols = im_t0.s2.shape[1:3]
         ic(rows, cols)
-        ic(im_2018.s2.shape)
+        ic(im_t0.s2.shape)
         patch_size = crop_size
 #        patch_overlap = 0.7
+
         patch_overlap_t0 = 0.1
+        if args.date_mode == 'both' or args.date_mode == 't0':
+            
 
-        train_patches, val_patches, test_patches, \
-        step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
-                                                im_2018.mask, augmentation_list, 
-                                                prefix = 0,
-                                                percent=patch_overlap_t0)
+            train_patches, val_patches, test_patches, \
+            step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
+                                                    im_t0.mask, augmentation_list, 
+                                                    prefix = 0,
+                                                    percent=patch_overlap_t0)
+        im_t0.addPadding(patch_size, patch_overlap_t0)
+        ic(im_t0.s1.shape, im_t0.s2_cloudy.shape, im_t0.s2.shape)
 
+        ic(len(train_patches))
+        ic(len(val_patches))
+        ic(len(test_patches))
         patch_overlap_t1 = 0.1
+        if args.date_mode == 'both' or args.date_mode == 't1':
         
-        ic(len(train_patches))
-        ic(len(val_patches))
-        ic(len(test_patches))
-        
-        train_patches_t1, val_patches_t1, test_patches_t1, \
-        step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
-                                                im_2018.mask, augmentation_list, 
-                                                prefix = 1,
-                                                percent=patch_overlap_t1)
+            
+            
+            ic(len(train_patches))
+            ic(len(val_patches))
+            ic(len(test_patches))
+            
+            train_patches_t1, val_patches_t1, test_patches_t1, \
+            step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
+                                                    im_t0.mask, augmentation_list, 
+                                                    prefix = 1,
+                                                    percent=patch_overlap_t1)
 
-        train_patches = train_patches + train_patches_t1
-        val_patches = val_patches + val_patches_t1
-        test_patches = test_patches + test_patches_t1
-        
+            train_patches = train_patches + train_patches_t1
+            val_patches = val_patches + val_patches_t1
+            test_patches = test_patches + test_patches_t1
+        im_t1.addPadding(patch_size, patch_overlap_t1)
+        ic(im_t1.s1.shape, im_t1.s2_cloudy.shape, im_t1.s2.shape)
+
         ic(len(train_patches))
         ic(len(val_patches))
         ic(len(test_patches))
         
-        im_2018.addPadding(patch_size, patch_overlap_t0)
-        im_2019.addPadding(patch_size, patch_overlap_t1)
-        # pdb.set_trace()
-        '''
-        train_patches, val_patches, test_patches, \
-        step_row, step_col, overlap = Split_in_Patches(rows, cols, patch_size, 
-                                                im_2019.mask, augmentation_list, 
-                                                prefix = 1,
-                                                percent=patch_overlap)
-        '''
-        ic(im_2018.s1.shape, im_2018.s2_cloudy.shape, im_2018.s2.shape)
-        ic(im_2019.s1.shape, im_2019.s2_cloudy.shape, im_2019.s2.shape)
-        # im_2019 = im_2018
+        
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TRAIN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        ims = {'s1_2018': im_2018.s1, 
-            's2_cloudy_2018': im_2018.s2_cloudy,
-            's2_2018': im_2018.s2,
-            's1_2019': im_2019.s1, 
-            's2_cloudy_2019': im_2019.s2_cloudy,
-            's2_2019': im_2019.s2
+        ims = {'s1_t0': im_t0.s1, 
+            's2_cloudy_t0': im_t0.s2_cloudy,
+            's2_t0': im_t0.s2,
+            's1_t1': im_t1.s1, 
+            's2_cloudy_t1': im_t1.s2_cloudy,
+            's2_t1': im_t1.s2
             }
         train_dsen2cr_amazon(model, model_name, base_out_path, resume_file, train_patches, val_patches, lr, log_step_freq,
                       shuffle_train, data_augmentation, random_crop, batch_size, scale, clip_max, clip_min, max_val_sar,
@@ -526,11 +502,21 @@ def run_dsen2cr(predict_file=None, resume_file=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DSen2-CR model code')
-    parser.add_argument('--predict', action='store', dest='predict_file', help='Predict from model checkpoint.')
-    parser.add_argument('--resume', action='store', dest='resume_file', help='Resume training from model checkpoint.')
-    args = parser.parse_args()
+    parser.add_argument('--predict', action='store', dest='predict_file', default=None, help='Predict from model checkpoint.')
+    parser.add_argument('--resume', action='store', dest='resume_file', default=None, help='Resume training from model checkpoint.')
+    
+    parser.add_argument('--phase', dest='phase', default='train', help='train, test, generate_image, create_dataset')
+    parser.add_argument('--dataset_name', dest='dataset_name', default='SEN2MS-CR', choices=["PA", "MG", 
+        "Santarem", "Santarem_I1", "Santarem_I2", "Santarem_I3", "Santarem_I4", "Santarem_I5", "NRW"], help='name of the dataset')
+    parser.add_argument('--datasets_dir', dest='datasets_dir', default='D:/Jorge/dataset/', help='root dir')
+    parser.add_argument('--result_dir', dest='result_dir', default='D:/Jorge/cloudRemoval/results/', help='results dir')
 
-    run_dsen2cr(args.predict_file, args.resume_file)
+    parser.add_argument("--date_mode", default="both", choices=["both", "t0", "t1"], help="Indicate which date generate ")
+
+    args = parser.parse_args()
+    args.root_path = args.datasets_dir
+    ic(args)
+    run_dsen2cr(args)
 
     
     
