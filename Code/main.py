@@ -201,13 +201,6 @@ def run_dsen2cr(args):
         change_time = 'T0'
         date = dates[0] if change_time == 'T0' else dates[1]
 
-        if predict_data_type == 'val':
-            predict_filelist = val_filelist
-        elif predict_data_type == 'test':
-            predict_filelist = test_filelist
-        else:
-            raise ValueError('Prediction data type not recognized.')
-        #ic(predict_filelist)
 
         only_get_tif = False
         if only_get_tif == True:
@@ -245,7 +238,7 @@ def run_dsen2cr(args):
         crop_sample_im = False
         loadIms = False
         im = imageObj(date = date, crop_sample_im = crop_sample_im, normalize = True,
-            loadIms = loadIms)
+            loadIms = loadIms, root_path = args.root_path)
         im.loadMask()
 
         ic(np.min(im.s1), np.min(im.s2), np.min(im.s2_cloudy))
@@ -286,7 +279,11 @@ def run_dsen2cr(args):
         else:
             predictions = np.load(save_id+date+'.npy').astype(np.float32)
 
-        original_im_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif"
+        if args.dataset_name == 'NRW':
+            original_im_path = 'D:/Javier/Repo_Noa/SAR2Optical_Project/Datasets/NRW/S2/R10m/T32UMC_20200601T103629_B02_10m.jp2'
+        else:
+            original_im_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif"
+        
         produced_im_path = save_id+"_"+date+".tif"
         GeoReference_Raster_from_Source_data(original_im_path, 
             predictions*2000, produced_im_path, bands = bands)
