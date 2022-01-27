@@ -552,6 +552,8 @@ def Split_in_Patches(rows, cols, patch_size, mask,
     prefix: refers to a certain image (t0 or t1)
     percent: overlap between consecutive patches
     """
+    # nan_mask
+    nan_mask = np.load('D:/Javier/Repo_Noa/SAR2Optical_Project/Datasets/NRW/nan_mask.npy')
 
     # Percent of overlap between consecutive patches.
     overlap = round(patch_size * percent)
@@ -586,6 +588,8 @@ def Split_in_Patches(rows, cols, patch_size, mask,
                 ## if cloud_mask[i*stride:i*stride + patch_size, j*stride:j*stride + patch_size].any():
                 ##     cloudy_patches += 1
                 ##     continue
+                if nan_mask[i*stride:i*stride + patch_size, j*stride:j*stride + patch_size].any():
+                    continue 
                 for k in augmentation_list:
                     train_patches.append((prefix, i*stride, j*stride, k))
                 ## if not lbl[i*stride:i*stride + patch_size, j*stride:j*stride + patch_size].any():

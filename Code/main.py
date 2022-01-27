@@ -224,7 +224,7 @@ def run_dsen2cr(args):
             
             produced_im_path = save_id+"_"+date+".tif"
             GeoReference_Raster_from_Source_data(original_im_path, 
-                predictions, produced_im_path, bands = bands)
+                predictions.astype(np.uint16), produced_im_path, bands = bands)
             pdb.set_trace()
 
         print("Predicting using file: {}".format(predict_file))
@@ -281,12 +281,13 @@ def run_dsen2cr(args):
 
         if args.dataset_name == 'NRW':
             original_im_path = 'D:/Javier/Repo_Noa/SAR2Optical_Project/Datasets/NRW/S2/R10m/T32UMC_20200601T103629_B02_10m.jp2'
+            dtype = np.uint16
         else:
             original_im_path = "D:/jorg/phd/fifth_semester/project_forestcare/cloud_removal/dataset/10m_all_bands/Sentinel2_2018/COPERNICUS_S2_20180721_20180726_B1_B2_B3.tif"
-        
+            dtype = np.float32
         produced_im_path = save_id+"_"+date+".tif"
         GeoReference_Raster_from_Source_data(original_im_path, 
-            predictions*2000, produced_im_path, bands = bands)
+            (predictions*2000).astype(dtype), produced_im_path, bands = bands)
 
         ic(np.average(im.s2), np.average(predictions), 
             np.std(im.s2), np.std(predictions))
@@ -318,9 +319,9 @@ def run_dsen2cr(args):
 
         
         GeoReference_Raster_from_Source_data(original_im_path, 
-            im.s2*2000, "s2_"+date+".tif", bands = im.s2.shape[0])
+            (im.s2*2000).astype(dtype), "s2_"+date+".tif", bands = im.s2.shape[0])
         GeoReference_Raster_from_Source_data(original_im_path, 
-            im.s2_cloudy*2000, "s2_cloudy_"+date+".tif", bands = im.s2_cloudy.shape[0])        
+            (im.s2_cloudy*2000).astype(dtype), "s2_cloudy_"+date+".tif", bands = im.s2_cloudy.shape[0])        
         pdb.set_trace()
 
 
